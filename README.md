@@ -1,5 +1,26 @@
 # Proyecto Base - PDISC 7° Año 4° División
 
+# Multiventas Barvie
+
+## Proyecto Final - PDISC 7° Año 4° División
+
+### Integrantes del grupo
+
+- Autalan Patricio
+- Uriel Barvie
+- Priscila Perdomo
+- Naila Galazarza
+
+---
+
+Este es un proyecto base en PHP pensado para que los alumnos trabajen con una aplicación simple de autenticación. Incluye:
+
+- Un formulario de registro.
+- Un formulario de login.
+- Un área privada protegida por sesión.
+- Conexión a base de datos usando PDO y configuración desde un archivo `.env`.
+
+
 Este es un proyecto base en PHP pensado para que los alumnos trabajen con una aplicación simple de autenticación. Incluye:
 
 - Un formulario de registro.
