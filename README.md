@@ -9,7 +9,7 @@
 - Autalan Patricio
 - Uriel Barvie
 - Priscila Perdomo
-- Naila Galazar
+- Naila Galarza
 
 ---
 
