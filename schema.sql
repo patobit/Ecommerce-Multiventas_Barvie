@@ -83,7 +83,7 @@ CREATE TABLE envios (
         REFERENCES compras(id_compra)
 );
 
-REATE TABLE carritos (
+CREATE TABLE carritos (
     id_carrito INT AUTO_INCREMENT PRIMARY KEY,
 
     id_usuario INT NOT NULL,
@@ -202,14 +202,38 @@ VALUES
 ),
 
 (
+    'Fragancias',
+    'Fragancias para el interior de tu vehiculo',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
+),
+
+(
     'Limpieza de interiores',
     'Productos para limpieza de tapizados y plásticos',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
 ),
 
 (
-    'Microfibras',
+    'Cepillos',
+    'cepillos de interior y exterior',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
+),
+
+(
+    'Paños',
     'Paños y toallas de microfibra',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
+),
+
+(
+    'kits de limpieza',
+    'contiene paños, esponja, etc',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
+),
+
+(
+    'Varios',
+    'Variedad de productos de detailing',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Detailing')
 );
 
@@ -219,6 +243,38 @@ VALUES
 INSERT INTO categorias
 (nombre, descripcion, id_categoria_padre)
 VALUES
+
+
+(
+    'Compresores',
+    'Compresores de aire',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
+),
+
+(
+    'calibres',
+    'calibres para medir presion de neumaticos',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
+),
+
+(
+    'discos de corte',
+    'discos para moladora',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
+),
+
+(
+    'Caballetes',
+    'Caballetes para complementar tu criquet hidraulico ',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
+),
+
+(
+    'Lingas',
+    'Lingas',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
+),
+
 (
     'Llaves',
     'Llaves para mantenimiento y reparación',
@@ -226,20 +282,21 @@ VALUES
 ),
 
 (
-    'Destornilladores',
-    'Destornilladores y puntas',
+    'Aspiradoras',
+    'aspiradoras para tu vehiculo',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
 ),
 
 (
-    'Pinzas',
-    'Pinzas y herramientas de sujeción',
+    'criquet hidraulico',
+    'criquet para levantar vehículos',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
 ),
 
+
 (
-    'Gatos hidráulicos',
-    'Gatos para levantar vehículos',
+    'Hidro lavadoras',
+    'Ideal para limpiar tu vehiculo',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
 ),
 
@@ -249,17 +306,13 @@ VALUES
     (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
 ),
 
-(
-    'Taladros',
-    'Taladros y herramientas eléctricas',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
-),
 
 (
-    'Cajas de herramientas',
-    'Cajas y organizadores de herramientas',
+    'Varios',
+    'variedad de productos de herramientas',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Herramientas')
 );
+
 
 /*SUBCATEGORIA DE ACCESORIOS*/
 
@@ -291,20 +344,20 @@ VALUES
 ),
 
 (
-    'Organizadores',
-    'Organizadores para el interior del vehículo',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Accesorios')
-),
-
-(
-    'Iluminación',
-    'Luces y accesorios de iluminación',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Accesorios')
-),
-
-(
     'Accesorios interiores',
     'Accesorios para el interior del vehículo',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Accesorios')
+),
+
+(
+    'cubrevolantes',
+    'cubrevolantes para tu vehiculo',
+    (SELECT id_categoria FROM categorias WHERE nombre = 'Accesorios')
+),
+
+(
+    'Varios',
+    'Varios productos de accesorios',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Accesorios')
 );
 
@@ -313,39 +366,10 @@ VALUES
 INSERT INTO categorias
 (nombre, descripcion, id_categoria_padre)
 VALUES
-(
-    'Alarmas',
-    'Sistemas de alarma para vehículos',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Cámaras',
-    'Cámaras y sistemas de grabación',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
 
 (
     'Cierres de seguridad',
     'Sistemas y accesorios de seguridad',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Chalecos reflectivos',
-    'Chalecos de alta visibilidad',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Conos',
-    'Conos y elementos de señalización',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Elementos reflectivos',
-    'Elementos reflectivos para vehículos',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
 ),
 
@@ -368,19 +392,7 @@ VALUES
 ),
 
 (
-    'Infladores',
-    'Infladores y compresores portátiles',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Linternas',
-    'Linternas para situaciones de emergencia',
-    (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
-),
-
-(
-    'Kits de emergencia',
-    'Kits completos para emergencias vehiculares',
+    'Varios',
+    'Varios productos de seguridad y emergencia',
     (SELECT id_categoria FROM categorias WHERE nombre = 'Seguridad y Emergencia')
 );
