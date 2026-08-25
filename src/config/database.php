@@ -1,25 +1,67 @@
 <?php
-$env = parse_ini_file(__DIR__ . '/../../.env');
+// CONEXIÓN A LA BASE DE DATOS (PDO) — credenciales leídas desde el .env
 
-# Valores de la conexión, los saca del archivo '.env'
-$host    = $env['DB_HOST'];
-$db      = $env['DB_NAME'];
-$user    = $env['DB_USER'];
-$pass    = $env['DB_PASS'];
-$charset = $env['DB_CHARSET'] ?? 'utf8mb4';
 
-# Data Source Name (DSN) especifica el driver (mysql), host, database, y el charset
-# No es más que un string que se usa al crear la conexión (linea 21)
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
+/**
+ * Carga simple de variables desde un archivo .env (formato CLAVE=valor).
+ * No depende de Composer ni de ninguna librería externa.
+ */
+function cargarEnv(string $rutaArchivo): void
+{
+    if (!file_exists($rutaArchivo)) {
+        return;
+    }
 
-try {
-     $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-     die("La conexión a la base de datos falló: " . $e->getMessage());
+    foreach (file($rutaArchivo, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $linea) {
+        $linea = trim($linea);
+
+        // Ignorar líneas vacías y comentarios (#)
+        if ($linea === '' || str_starts_with($linea, '#')) {
+            continue;
+        }
+        if (strpos($linea, '=') === false) {
+            continue;
+        }
+
+        [$clave, $valor] = explode('=', $linea, 2);
+        $clave = trim($clave);
+        $valor = trim($valor);
+        $valor = trim($valor, "\"'"); // saca comillas si las tiene, ej: DB_PASSWORD="1234"
+
+        if (!isset($_ENV[$clave])) {
+            $_ENV[$clave] = $valor;
+            putenv("{$clave}={$valor}");
+        }
+    }
 }
-?>
+
+// El .env vive en la raíz del proyecto. Este archivo está en src/config/,
+// así que hay que subir dos niveles.
+cargarEnv(__DIR__ . '/../../.env');
+
+$DB_HOST = $_ENV['DB_HOST'] ?? 'localhost';
+$DB_NAME = $_ENV['DB_NAME'] ?? 'multiventas';
+$DB_USER = $_ENV['DB_USER'] ?? 'root';
+$DB_PASS = $_ENV['DB_PASSWORD'] ?? '';
+
+if (!isset($pdo)) {
+    try {
+        $pdo = new PDO(
+            "mysql:host={$DB_HOST};dbname={$DB_NAME};charset=utf8mb4",
+            $DB_USER,
+            $DB_PASS,
+            [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]
+        );
+    } catch (PDOException $e) {
+        // En desarrollo mostramos el error para poder debuggear.
+        // Antes de entregar el proyecto, esto debería loguearse en vez de mostrarse.
+        die('<div style="font-family:sans-serif;padding:2rem;color:#b00">
+                <h2>Error de conexión a la base de datos</h2>
+                <p>' . htmlspecialchars($e->getMessage()) . '</p>
+                <p>Revisá los valores en tu archivo <code>.env</code> (raíz del proyecto) y que el servicio MySQL de Laragon esté encendido.</p>
+             </div>');
+    }
+}
