@@ -30,23 +30,23 @@ function renderProductCard(array $p): string
     if ($tieneOferta) {
         $precioOferta = number_format((float) $p['precio_oferta'], 2, ',', '.');
         $precioHtml = '<span class="me-2 text-secondary text-decoration-line-through small">$' . $precio . '</span>'
-            . '<span class="fs-5 fw-bold text-danger">$' . $precioOferta . '</span>';
-    } else {
-        $precioHtml = '<span class="fs-5 fw-bold text-white">$' . $precio . '</span>';
+        . '<span class="fs-5 fw-bold text-danger">$' . $precioOferta . '</span>';
+        } else {
+            $precioHtml = '<span class="fs-5 fw-bold text-white">$' . $precio . '</span>';
     }
-
+    
     // Imagen real si existe, o un placeholder si el producto todavía no tiene una cargada
     if (!empty($p['imagen'])) {
         $imagenHtml = '<img src="' . BASE_URL . '/assets/img/' . htmlspecialchars($p['imagen']) . '" '
-            . 'class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;" alt="' . htmlspecialchars($p['nombre']) . '">';
-    } else {
-        $imagenHtml = '<div class="w-100 rounded-3 mb-3 d-flex align-items-center justify-content-center" '
+        . 'class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;" alt="' . htmlspecialchars($p['nombre']) . '">';
+        } else {
+            $imagenHtml = '<div class="w-100 rounded-3 mb-3 d-flex align-items-center justify-content-center" '
             . 'style="height:160px;background-color:#0b0c0e;border:1px dashed #495057;">'
             . '<span class="text-secondary small">Sin imagen</span></div>';
-    }
-
-    $disabledAttr = (int) $p['stock'] <= 0 ? 'disabled' : '';
-
+            }
+            
+            $disabledAttr = (int) $p['stock'] <= 0 ? 'disabled' : '';
+            
     ob_start();
     ?>
     <div class="col-12 col-md-6" data-category="<?= (int) $p['id_categoria'] ?>">
@@ -62,10 +62,17 @@ function renderProductCard(array $p): string
             </div>
             <div class="border-top border-secondary border-opacity-10 pt-3 mt-3 d-flex justify-content-between align-items-center" onclick="event.stopPropagation();">
                 <span><?= $precioHtml ?></span>
-                <button class="btn btn-sm btn-premium-red" onclick="addToCart(<?= (int) $p['id_producto'] ?>, 1, '<?= addslashes($p['nombre']) ?>')" <?= $disabledAttr ?>>Añadir</button>
+                        <button type="button"
+        class="btn btn-premium-red"
+        onclick="event.stopPropagation(); addToCart(<?= (int) $p['id_producto'] ?>, 1, '<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')">
+    Agregar al carrito
+</button>
+
             </div>
         </div>
     </div>
+    <script src="../../assets/js/app.js">
+        </script>
     <?php
     return ob_get_clean();
-}
+    }

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/src/config/rutas.php';                     // define BASE_URL
 require_once __DIR__ . '/src/config/database.php';                  // define $pdo
-require_once __DIR__ . '/src/controllers/productos_controller.php'; // consultas a la DB
+require_once __DIR__ . '/src/controllers/auth/productos_controller.php'; // consultas a la DB
 require_once __DIR__ . '/src/views/productos_card.php';              // renderProductCard()
 
 $secciones = [

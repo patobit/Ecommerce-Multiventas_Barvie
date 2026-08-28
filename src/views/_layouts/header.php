@@ -4,7 +4,7 @@
 // duplique si el archivo que lo incluyó ya la había cargado antes.
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../controllers/productos_controller.php';
+require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
 
 $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
 ?>
@@ -62,7 +62,13 @@ $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
                         <li class="nav-item"><a class="nav-link text-secondary" href="#">Envíos</a></li>
                     </ul>
                     <div class="ms-lg-4 d-flex align-items-center gap-2">
-                        <button class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold" id="cartBtn">Mi Carrito (0)</button>
+                       
+
+                              <a href="http://localhost:8000/src/views/carrito.php"
+   class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
+   id="cartBtn">
+    Mi Carrito (0)
+</a>
                         <button
                             class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"
                             data-bs-toggle="modal" data-bs-target="#authModal">

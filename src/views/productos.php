@@ -95,20 +95,27 @@ require_once __DIR__ . '/_layouts/header.php';
                             <input type="number" id="qtyInput" class="form-control form-control-premium text-center" value="1" min="1" max="<?= (int) $producto['stock'] ?>">
                             <button class="btn btn-premium-outline" type="button" id="qtyPlus">+</button>
                         </div>
-                        <button class="btn btn-premium-red flex-grow-1 py-2"
+                        <!-- <button class="btn btn-premium-red flex-grow-1 py-2"
                                 onclick="addToCart(<?= (int) $producto['id_producto'] ?>, document.getElementById('qtyInput').value, '<?= addslashes($producto['nombre']) ?>')"
                                 <?= (int) $producto['stock'] <= 0 ? 'disabled' : '' ?>>
                             <?= (int) $producto['stock'] <= 0 ? 'Sin stock' : 'Añadir al carrito' ?>
-                        </button>
+                        </button> -->
+                       <!--  <button type="button"
+        class="btn btn-premium-red"
+        onclick="event.stopPropagation(); addToCart(<?= (int) $producto['id_producto'] ?>, 1, '<?= htmlspecialchars($producto['nombre'], ENT_QUOTES) ?>')">
+    Agregar al carrito
+</button> -->
                     </div>
                 </div>
             </div>
 
         <?php endif; ?>
-
+   
+            <script src="../../assets/js/app.js">
+        </script>
     </main>
 
-    <script>
+    <script >
         // Botones +/- de cantidad (respetando el stock disponible)
         document.addEventListener('DOMContentLoaded', () => {
             const qtyInput = document.getElementById('qtyInput');
