@@ -266,3 +266,381 @@
             color: var(--accent-red) !important;
             font-weight: bold;
         }
+
+        /* ============================================================
+   CARRITO DE COMPRAS
+   ============================================================ */
+
+.cart-products {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+/* Producto individual */
+
+.cart-product {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: 0.2s ease;
+}
+
+.cart-product:hover {
+    border-color: rgba(220, 53, 69, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+
+/* Imagen del producto */
+
+.cart-product-image {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.cart-no-image {
+    font-size: 30px;
+}
+
+
+/* Información */
+
+.cart-product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 110px 1fr 130px 140px;
+    align-items: center;
+    gap: 25px;
+
+    padding: 25px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+/* IMAGEN */
+
+.cart-product-image {
+    width: 110px;
+    height: 110px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f5f5f5;
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+.cart-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.cart-product-image span {
+    font-size: 35px;
+}
+
+/* INFORMACIÓN DEL PRODUCTO */
+
+.cart-product-info {
+    min-width: 0;
+}
+
+.cart-product-name {
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.cart-product-description {
+    color: #888;
+    font-size: 0.85rem;
+    margin: 0 0 10px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+.cart-product-price {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* CANTIDAD */
+
+.quantity-label,
+.subtotal-label {
+    display: block;
+    color: #777;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+}
+
+.cart-product-quantity {
+    text-align: center;
+}
+
+.quantity-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+
+    overflow: hidden;
+}
+
+.quantity-box button {
+    width: 32px;
+    height: 32px;
+
+    border: none;
+    background: transparent;
+    color: white;
+
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.quantity-box button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.quantity-box span {
+    min-width: 35px;
+    text-align: center;
+    color: white;
+    font-weight: 600;
+}
+
+
+/* SUBTOTAL */
+
+.cart-product-subtotal {
+    text-align: right;
+}
+
+.cart-product-subtotal strong {
+    color: white;
+    font-size: 1rem;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+
+    .cart-item {
+        grid-template-columns: 80px 1fr;
+        gap: 15px;
+    }
+
+    .cart-product-image {
+        width: 80px;
+        height: 80px;
+    }
+
+    .cart-product-quantity,
+    .cart-product-subtotal {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .cart-product {
+        gap: 12px;
+    }
+
+    .cart-product-info {
+        width: calc(100% - 90px);
+    }
+
+    .cart-product-quantity {
+        margin-left: 0;
+    }
+
+    .cart-product-subtotal {
+        min-width: auto;
+    }
+
+}
+
+.cart-item {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* ============================================================
+   PRODUCTOS DEL CARRITO
+   ============================================================ */
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 110px 1fr 130px 140px;
+    align-items: center;
+    gap: 25px;
+
+    padding: 25px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.cart-item:first-child {
+    padding-top: 10px;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+
+/* Imagen */
+
+.cart-product-image {
+    width: 110px;
+    height: 110px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f5f5f5;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cart-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+
+/* Información */
+
+.cart-product-info {
+    min-width: 0;
+}
+
+.cart-product-name {
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.cart-product-description {
+    color: #888;
+    font-size: 0.85rem;
+    margin: 0 0 10px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cart-product-price {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+
+/* Cantidad */
+
+.cart-product-quantity {
+    text-align: center;
+}
+
+.quantity-label,
+.subtotal-label {
+    display: block;
+    color: #777;
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+}
+
+.quantity-box {
+    display: inline-flex;
+    align-items: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.quantity-box button {
+    width: 32px;
+    height: 32px;
+
+    border: none;
+    background: transparent;
+    color: white;
+
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.quantity-box button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.quantity-box span {
+    min-width: 35px;
+    text-align: center;
+    color: white;
+    font-weight: 600;
+}
+
+
+/* Subtotal */
+
+.cart-product-subtotal {
+    text-align: right;
+}
+
+.cart-product-subtotal strong {
+    color: white;
+    font-size: 1rem;
+}

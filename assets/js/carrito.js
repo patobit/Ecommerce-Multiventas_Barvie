@@ -1,8 +1,17 @@
-function getAllCartProducts() {
-    /* completar */
+export async function getAllCartProducts() {
+    const endpoint = '/src/controllers/auth/carrito.php';
+
+    try {
+        const res = await fetch(endpoint, {method: 'GET'});
+        const text = await res.text();
+        return JSON.parse(text);
+    } catch (error) {
+        console.error('Error al obtener productos del carrito:', error);
+        return null;
+    }
 }
 
-function addToCart(id, cantidad = 1, nombre = 'Producto') {
+export function addToCart(id, cantidad = 1, nombre = 'Producto') {
     cantidad = parseInt(cantidad, 10) || 1;
     const idProducto = parseInt(id, 10) || 0;
 

@@ -1,14 +1,28 @@
 <?php
 require_once __DIR__ . '/../config/rutas.php';
 require_once __DIR__ . '/_layouts/header.php';
-?>
+require_once __DIR__ . '/../controllers/auth/carrito.php';
 
+$id_usuario = 2; // temporal
+
+$resultado = obtenerProductosDelCarrito($pdo, $id_usuario);
+
+$productos = $resultado['productos'] ?? [];
+$total = (float) ($resultado['total'] ?? 0);
+
+// Cantidad total de unidades
+$cantidadProductos = 0;
+
+foreach ($productos as $producto) {
+    $cantidadProductos += (int) $producto['cantidad'];
+}
+?>
 <main class="container my-5">
 
-    <!-- ENCABEZADO -->
+    <!-- TÍTULO DEL CARRITO -->
     <div class="mb-4">
         <h1 class="fw-bold text-white text-uppercase tracking-wide">
-            Mi Carrito
+             Mi Carrito
         </h1>
 
         <p class="text-secondary">
@@ -16,33 +30,119 @@ require_once __DIR__ . '/_layouts/header.php';
         </p>
     </div>
 
+
+    <!-- CONTENIDO DEL CARRITO -->
     <div class="row g-4">
 
         <!-- ==========================================
-             PRODUCTOS DEL CARRITO
+             LISTA DE PRODUCTOS
              ========================================== -->
         <div class="col-12 col-lg-8">
 
             <div class="card card-premium p-4">
 
+                <!-- ENCABEZADO -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
+
                     <h2 class="h5 fw-bold text-white mb-0">
                         Productos
                     </h2>
 
                     <span class="text-secondary small" id="cartItemCount">
-                        0 productos
+                        <?= count($productos) ?> productos
                     </span>
+
                 </div>
 
-                <!-- Acá JavaScript va a colocar los productos -->
+
+                <!-- PRODUCTOS -->
                 <div id="cartItems">
 
-                    <div class="text-center py-5">
-                        <p class="text-secondary mb-0">
-                            Tu carrito está vacío.
-                        </p>
-                    </div>
+                    <?php if (empty($productos)): ?>
+
+                        <div class="text-center py-5">
+                            <div class="fs-1 mb-3">🛒</div>
+
+                            <p class="text-secondary mb-0">
+                                Tu carrito está vacío.
+                            </p>
+                        </div>
+
+                    <?php else: ?>
+
+                        <?php foreach ($productos as $producto): ?>
+
+     <div class="cart-item">
+
+        <!-- IMAGEN DEL PRODUCTO -->
+        <div class="cart-product-image">
+            <?php if (!empty($producto['imagen'])): ?>
+                <img
+                    src="<?= htmlspecialchars($producto['imagen']) ?>"
+                    alt="<?= htmlspecialchars($producto['nombre']) ?>"
+                >
+            <?php else: ?>
+                <span>🛒</span>
+            <?php endif; ?>
+        </div>
+
+
+        <!-- INFORMACIÓN DEL PRODUCTO -->
+        <div class="cart-product-info">
+
+            <h3 class="cart-product-name">
+                <?= htmlspecialchars($producto['nombre']) ?>
+            </h3>
+
+            <p class="cart-product-description">
+                <?= htmlspecialchars($producto['descripcion']) ?>
+            </p>
+
+            <p class="cart-product-price">
+                $<?= number_format($producto['precio'], 2, ',', '.') ?>
+            </p>
+
+        </div>
+
+
+        <!-- CANTIDAD -->
+        <div class="cart-product-quantity">
+
+            <span class="quantity-label">
+                Cantidad
+            </span>
+
+            <div class="quantity-box">
+                <button type="button">−</button>
+
+                <span>
+                    <?= (int)$producto['cantidad'] ?>
+                </span>
+
+                <button type="button">+</button>
+            </div>
+
+        </div>
+
+
+        <!-- SUBTOTAL -->
+        <div class="cart-product-subtotal">
+
+            <span class="subtotal-label">
+                Subtotal
+            </span>
+
+            <strong>
+                $<?= number_format($producto['subtotal'], 2, ',', '.') ?>
+            </strong>
+
+        </div>
+
+    </div>
+
+<?php endforeach; ?>
+
+                    <?php endif; ?>
 
                 </div>
 
@@ -62,17 +162,24 @@ require_once __DIR__ . '/_layouts/header.php';
                     Resumen de compra
                 </h2>
 
+
+                <!-- SUBTOTAL -->
                 <div class="d-flex justify-content-between mb-3">
+
                     <span class="text-secondary">
                         Subtotal
                     </span>
 
                     <span class="text-white" id="cartSubtotal">
-                        $0,00
+                        $<?= number_format($resultado['total'], 2, ',', '.') ?>
                     </span>
+
                 </div>
 
+
+                <!-- ENVÍO -->
                 <div class="d-flex justify-content-between mb-3">
+
                     <span class="text-secondary">
                         Envío
                     </span>
@@ -80,27 +187,41 @@ require_once __DIR__ . '/_layouts/header.php';
                     <span class="text-white" id="cartShipping">
                         $0,00
                     </span>
+
                 </div>
+
 
                 <hr class="border-secondary border-opacity-25">
 
-                <div class="d-flex justify-content-between mb-4">
+
+                <!-- TOTAL -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
                     <span class="fw-bold text-white">
                         Total
                     </span>
 
                     <span class="fw-bold text-danger fs-5" id="cartTotal">
-                        $0,00
+                        $<?= number_format($resultado['total'], 2, ',', '.') ?>
                     </span>
+
                 </div>
 
-                <button type="button"
-                        class="btn btn-premium-red w-100 fw-semibold">
+
+                <!-- FINALIZAR COMPRA -->
+                <button
+                    type="button"
+                    class="btn btn-premium-red w-100 fw-semibold"
+                >
                     Finalizar compra
                 </button>
 
-                <a href="<?= BASE_URL ?>/src/views/catalogo.php"
-                   class="btn btn-premium-outline w-100 mt-2">
+
+                <!-- SEGUIR COMPRANDO -->
+                <a
+                    href="<?= BASE_URL ?>/src/views/catalogo.php"
+                    class="btn btn-premium-outline w-100 mt-2"
+                >
                     Seguir comprando
                 </a>
 
@@ -111,6 +232,19 @@ require_once __DIR__ . '/_layouts/header.php';
     </div>
 
 </main>
+
+
+<script type="module">
+
+    import { getAllCartProducts } from "../../assets/js/carrito.js";
+
+    getAllCartProducts().then(data => {
+        console.log(data);
+    });
+
+</script>
+
+
 
 <?php
 require_once __DIR__ . '/_layouts/footer.php';
