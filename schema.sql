@@ -3,7 +3,7 @@ CREATE DATABASE multiventas;
 USE multiventas;
 
  CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,

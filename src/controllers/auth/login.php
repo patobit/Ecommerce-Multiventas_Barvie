@@ -21,7 +21,7 @@ if ($email === '' || $password === '') {
 // Paso clave #3: Buscar usuario por Email y verificar contraseña -
 try {
   // Buscamos el usuario por email y traemos id, name, last_name, email y el hash de password
-$stmt = $pdo->prepare('SELECT id, name, apellido, email, password FROM users WHERE email = :email');
+$stmt = $pdo->prepare('SELECT id_usuario, nombre, apellido, email, password FROM usuarios WHERE email = :email');
   $stmt->execute(['email' => $email]);
   $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -33,9 +33,9 @@ $stmt = $pdo->prepare('SELECT id, name, apellido, email, password FROM users WHE
   }
 
   // Paso clave #4: Cargar datos del usuario en la Sesión --------
-$_SESSION['user'] = [
-    'id'       => $user['id'],
-    'name'     => $user['name'],
+$_SESSION['usuario'] = [
+    'id'       => $user['id_usuario'],
+    'name'     => $user['nombre'],
     'apellido' => $user['apellido'],
     'email'    => $user['email'],
 ];

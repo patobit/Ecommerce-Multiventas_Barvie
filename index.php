@@ -64,7 +64,6 @@ require_once __DIR__ . '/src/views/_layouts/header.php';
             </div>
         </div>
     </main>
-
 <?php
 require_once __DIR__ . '/src/views/_layouts/footer.php';
 ?>

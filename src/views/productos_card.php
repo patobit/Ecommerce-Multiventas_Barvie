@@ -1,136 +1,76 @@
 <?php
-require_once __DIR__ . '/../config/rutas.php';
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../controllers/auth/productos_controller.php';
+// =============================================================================
+// RENDERIZADO DE TARJETAS DE PRODUCTO (SOLO VISTA/HTML — SIN CONSULTAS A LA DB)
+// =============================================================================
+// Esta función arma el HTML de una tarjeta de producto a partir de un array
+// asociativo con los datos ya obtenidos. NO se conecta a la base de datos:
+// espera recibir el array $p ya resuelto (por eso puede usarse en la home,
+// en el catálogo, etc. sin importar de dónde vino el dato).
+//
+// El array $p debe tener las columnas de la tabla `productos`
+// (id_producto, nombre, descripcion, imagen, stock, precio, id_categoria)
+// más 'categoria_nombre' (viene de un JOIN con `categorias`).
+// Opcionalmente puede traer 'precio_oferta' si esa columna existe.
 
-$idProducto = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-$producto = $idProducto > 0 ? obtenerProductoPorId($pdo, $idProducto) : null;
+function renderProductCard(array $p): string
+{
+    $precio = number_format((float) $p['precio'], 2, ',', '.');
 
-require_once __DIR__ . '/_layouts/header.php';
-?>
-    <main class="container my-5">
+    // Estado de stock
+    if ((int) $p['stock'] <= 0) {
+        $stockHtml = '<span class="text-danger small fw-semibold">● Sin Stock</span>';
+    } elseif ((int) $p['stock'] <= 5) {
+        $stockHtml = '<span class="text-warning small fw-semibold">● Últimas Unidades</span>';
+    } else {
+        $stockHtml = '<span class="text-success small fw-semibold">● Stock Disponible</span>';
+    }
 
-        <?php if (!$producto): ?>
-
-            <!-- ================================================================
-                 PRODUCTO NO ENCONTRADO
-                 ================================================================ -->
-            <div class="p-5 text-center bg-dark border border-secondary border-opacity-25 rounded-3">
-                <p class="text-secondary mb-3">No encontramos el producto que buscás.</p>
-                <a href="<?= BASE_URL ?>/src/views/catalogo.php" class="btn btn-premium-red">Volver al catálogo</a>
-            </div>
-
-        <?php else: ?>
-
-            <!-- ================================================================
-                 VISTA DE DETALLE
-                 ================================================================ -->
-            <?php
-                $precio = number_format((float) $producto['precio'], 2, ',', '.');
-                $tieneOferta = !empty($producto['precio_oferta']) && (float) $producto['precio_oferta'] < (float) $producto['precio'];
-
-                if ((int) $producto['stock'] <= 0) {
-                    $stockHtml = '<span class="text-danger fw-semibold">● Sin Stock</span>';
-                } elseif ((int) $producto['stock'] <= 5) {
-                    $stockHtml = '<span class="text-warning fw-semibold">● Últimas ' . (int) $producto['stock'] . ' unidades</span>';
-                } else {
-                    $stockHtml = '<span class="text-success fw-semibold">● Stock disponible (' . (int) $producto['stock'] . ')</span>';
-                }
-            ?>
-
-            <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int) $producto['id_categoria'] ?>" class="text-secondary text-decoration-none small d-inline-block mb-4">← Volver a <?= htmlspecialchars($producto['categoria_nombre']) ?></a>
-
-            <div class="row g-5">
-
-                <!-- Carrusel de fotos -->
-                <div class="col-12 col-lg-6">
-                    <div id="productoCarousel" class="carousel slide bg-dark border border-secondary border-opacity-25 rounded-3 overflow-hidden" data-bs-ride="false">
-                        <div class="carousel-inner">
-                            <div class="carousel-item active">
-                                <?php if (!empty($producto['imagen'])): ?>
-                                    <img src="<?= BASE_URL ?>/assets/img/<?= htmlspecialchars($producto['imagen']) ?>"
-                                         class="d-block w-100" style="height:420px;object-fit:cover;"
-                                         alt="<?= htmlspecialchars($producto['nombre']) ?>">
-                                <?php else: ?>
-                                    <div class="d-flex align-items-center justify-content-center" style="height:420px;background-color:#0b0c0e;">
-                                        <span class="text-secondary">Sin imagen todavía</span>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <!-- TODO: cuando haya varias fotos por producto, agregar acá más <div class="carousel-item"> -->
-                        </div>
-                        <!-- Controles ocultos por ahora (solo hay 1 foto); al agregar más fotos, descomentar: -->
-                        <!--
-                        <button class="carousel-control-prev" type="button" data-bs-target="#productoCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#productoCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon"></span>
-                        </button>
-                        -->
-                    </div>
-                </div>
-
-                <!-- Info del producto -->
-                <div class="col-12 col-lg-6">
-                    <span class="badge badge-premium-red mb-3"><?= htmlspecialchars($producto['categoria_nombre']) ?></span>
-                    <h1 class="fw-bold text-white mb-3"><?= htmlspecialchars($producto['nombre']) ?></h1>
-
-                    <div class="mb-3"><?= $stockHtml ?></div>
-
-                    <div class="mb-4">
-                        <?php if ($tieneOferta): ?>
-                            <span class="me-2 text-secondary text-decoration-line-through fs-5">$<?= $precio ?></span>
-                            <span class="display-6 fw-bold text-danger">$<?= number_format((float) $producto['precio_oferta'], 2, ',', '.') ?></span>
-                        <?php else: ?>
-                            <span class="display-6 fw-bold text-white">$<?= $precio ?></span>
-                        <?php endif; ?>
-                    </div>
-
-                    <p class="text-secondary mb-4"><?= nl2br(htmlspecialchars($producto['descripcion'] ?? 'Sin descripción disponible.')) ?></p>
-
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <div class="input-group" style="max-width: 140px;">
-                            <button class="btn btn-premium-outline" type="button" id="qtyMinus">−</button>
-                            <input type="number" id="qtyInput" class="form-control form-control-premium text-center" value="1" min="1" max="<?= (int) $producto['stock'] ?>">
-                            <button class="btn btn-premium-outline" type="button" id="qtyPlus">+</button>
-                        </div>
-                        <!-- <button class="btn btn-premium-red flex-grow-1 py-2"
-                                onclick="addToCart(<?= (int) $producto['id_producto'] ?>, document.getElementById('qtyInput').value, '<?= addslashes($producto['nombre']) ?>')"
-                                <?= (int) $producto['stock'] <= 0 ? 'disabled' : '' ?>>
-                            <?= (int) $producto['stock'] <= 0 ? 'Sin stock' : 'Añadir al carrito' ?>
-                        </button> -->
-                       <!--  <button type="button"
-        class="btn btn-premium-red"
-        onclick="event.stopPropagation(); addToCart(<?= (int) $producto['id_producto'] ?>, 1, '<?= htmlspecialchars($producto['nombre'], ENT_QUOTES) ?>')">
-    Agregar al carrito
-</button> -->
-                    </div>
-                </div>
-            </div>
-
-        <?php endif; ?>
-
-    </main>
-
-    <script >
-        // Botones +/- de cantidad (respetando el stock disponible)
-        document.addEventListener('DOMContentLoaded', () => {
-            const qtyInput = document.getElementById('qtyInput');
-            const qtyMinus = document.getElementById('qtyMinus');
-            const qtyPlus = document.getElementById('qtyPlus');
-            if (qtyInput && qtyMinus && qtyPlus) {
-                qtyMinus.addEventListener('click', () => {
-                    qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1', 10) - 1);
-                });
-                qtyPlus.addEventListener('click', () => {
-                    const max = parseInt(qtyInput.max || '999', 10);
-                    qtyInput.value = Math.min(max, parseInt(qtyInput.value || '1', 10) + 1);
-                });
+    // Precio (con o sin oferta activa)
+    $tieneOferta = !empty($p['precio_oferta']) && (float) $p['precio_oferta'] < (float) $p['precio'];
+    if ($tieneOferta) {
+        $precioOferta = number_format((float) $p['precio_oferta'], 2, ',', '.');
+        $precioHtml = '<span class="me-2 text-secondary text-decoration-line-through small">$' . $precio . '</span>'
+        . '<span class="fs-5 fw-bold text-danger">$' . $precioOferta . '</span>';
+        } else {
+            $precioHtml = '<span class="fs-5 fw-bold text-white">$' . $precio . '</span>';
+    }
+    
+    // Imagen real si existe, o un placeholder si el producto todavía no tiene una cargada
+    if (!empty($p['imagen'])) {
+        $imagenHtml = '<img src="' . BASE_URL . '/assets/img/' . htmlspecialchars($p['imagen']) . '" '
+        . 'class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;" alt="' . htmlspecialchars($p['nombre']) . '">';
+        } else {
+            $imagenHtml = '<div class="w-100 rounded-3 mb-3 d-flex align-items-center justify-content-center" '
+            . 'style="height:160px;background-color:#0b0c0e;border:1px dashed #495057;">'
+            . '<span class="text-secondary small">Sin imagen</span></div>';
             }
-        });
-    </script>
+            
+            $disabledAttr = (int) $p['stock'] <= 0 ? 'disabled' : '';
+            
+    ob_start();
+    ?>
+    <div class="col-12 col-md-6" data-category="<?= (int) $p['id_categoria'] ?>">
+        <div class="card card-premium h-100 d-flex flex-column justify-content-between p-4" onclick="openProductDetail(<?= (int) $p['id_producto'] ?>)">
+            <div>
+                <?= $imagenHtml ?>
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge badge-premium-red"><?= htmlspecialchars($p['categoria_nombre'] ?? '') ?></span>
+                    <?= $stockHtml ?>
+                </div>
+                <h4 class="h5 fw-bold text-white mb-2"><?= htmlspecialchars($p['nombre']) ?></h4>
+                <p class="text-secondary small mb-3"><?= htmlspecialchars($p['descripcion'] ?? '') ?></p>
+            </div>
+            <div class="border-top border-secondary border-opacity-10 pt-3 mt-3 d-flex justify-content-between align-items-center" onclick="event.stopPropagation();">
+                <span><?= $precioHtml ?></span>
+                        <button type="button"
+        class="btn btn-premium-red"
+        onclick="event.stopPropagation(); addToCart(<?= (int) $p['id_producto'] ?>, 1, '<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')">
+    Agregar al carrito
+</button>
 
-<?php
-require_once __DIR__ . '/_layouts/footer.php';
-?>
+            </div>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+    }

@@ -97,7 +97,7 @@ function addToCart(id, cantidad = 1, nombre = 'Producto') {
  */
 function openProductDetail(id) {
     const base = window.BASE_URL || '';
-    window.location.href = `${base}/src/views/productos.php?id=${id}`;
+    window.location.href = `${base}/src/views/producto_detalle.php?id=${id}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

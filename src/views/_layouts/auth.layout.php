@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config/rutas.php';     // BASE_URL
 require_once __DIR__ . '/../../config/bootstrap.php'; // sesión + $pdo
 
-if (isset($_SESSION['user'])) {
+if (isset($_SESSION['usuario'])) {
     header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
