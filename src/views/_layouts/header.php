@@ -4,7 +4,7 @@
 // duplique si el archivo que lo incluyó ya la había cargado antes.
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../controllers/productos_controller.php';
+require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
 
 $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
 ?>
@@ -17,7 +17,7 @@ $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
     <title>Multiventas Barvie - Accesorios y Repuestos Premium</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
 </head>
 
 <body>
@@ -62,7 +62,11 @@ $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
                         <li class="nav-item"><a class="nav-link text-secondary" href="#">Envíos</a></li>
                     </ul>
                     <div class="ms-lg-4 d-flex align-items-center gap-2">
-                        <button class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold" id="cartBtn">Mi Carrito (0)</button>
+                        <a href="<?= BASE_URL ?>/src/views/carrito.php"
+                           class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
+                           id="cartBtn">
+                           Mi Carrito (0)
+                        </a>
                         <button
                             class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"
                             data-bs-toggle="modal" data-bs-target="#authModal">
@@ -131,9 +135,5 @@ $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
          <?php endif; ?>
     </header>
-=======
-    </header>
->>>>>>> 996e4f44edcafc631328ab62360c01c0c02ccc87
