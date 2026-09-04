@@ -6,7 +6,7 @@ const cartButton = document.getElementById('cartBtn');
 
 export async function getAllCartProducts() {
     // Usamos BASE_URL para armar la ruta dinámica
-    const endpoint = `${BASE_URL}/src/controllers/auth/carrito.php`;
+    const endpoint =` ${BASE_URL}/src/controllers/auth/carrito_controller.php`;
 
     try {
         const res = await fetch(endpoint, { method: 'GET' });
@@ -78,4 +78,44 @@ export function addToCart(id, cantidad = 1, nombre = 'Producto') {
         console.error('Error al agregar al carrito:', error);
         alert('Ocurrió un error al agregar el producto.');
     });
+}
+export async function actualizarCantidad(idDetalleCarrito, nuevaCantidad) {
+    const endpoint = `${BASE_URL}/src/controllers/auth/carrito_controller.php`;
+    try {
+        const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_detalle_carrito: idDetalleCarrito, cantidad: nuevaCantidad })
+        });
+        return await res.json();
+    } catch (error) {
+        console.error('Error al actualizar la cantidad:', error);
+        return { success: false, message: 'Error de conexión.' };
+    }
+}
+
+export async function eliminarDelCarrito(idDetalleCarrito) {
+    const endpoint = `${BASE_URL}/src/controllers/auth/carrito_controller.php`;
+    try {
+        const res = await fetch(endpoint, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_detalle_carrito: idDetalleCarrito })
+        });
+        return await res.json();
+    } catch (error) {
+        console.error('Error al eliminar el producto:', error);
+        return { success: false, message: 'Error de conexión.' };
+    }
+}
+
+export async function finalizarCompra() {
+    const endpoint = `${BASE_URL}/src/controllers/auth/checkout_controller.php`;
+    try {
+        const res = await fetch(endpoint, { method: 'POST' });
+        return await res.json();
+    } catch (error) {
+        console.error('Error al finalizar la compra:', error);
+        return { success: false, message: 'Error de conexión.' };
+    }
 }

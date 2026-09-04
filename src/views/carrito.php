@@ -72,7 +72,8 @@ foreach ($productos as $producto) {
 
                         <?php foreach ($productos as $producto): ?>
 
-     <div class="cart-item">
+    
+        <div class="cart-item" data-id="<?= (int) $producto['id_detalle_carrito'] ?>"> 
 
         <!-- IMAGEN DEL PRODUCTO -->
         <div class="cart-product-image">
@@ -113,13 +114,13 @@ foreach ($productos as $producto) {
             </span>
 
             <div class="quantity-box">
-                <button type="button">−</button>
+                <button type="button" class="btn-menos">−</button>
 
                 <span>
                     <?= (int)$producto['cantidad'] ?>
                 </span>
 
-                <button type="button">+</button>
+                <button type="button" class="btn-mas">+</button>
             </div>
 
         </div>
@@ -135,6 +136,8 @@ foreach ($productos as $producto) {
             <strong>
                 $<?= number_format($producto['subtotal'], 2, ',', '.') ?>
             </strong>
+
+            <button type="button" class="btn-eliminar btn btn-sm btn-outline-danger mt-2">🗑️ Quitar</button>
 
         </div>
 
@@ -210,10 +213,11 @@ foreach ($productos as $producto) {
 
                 <!-- FINALIZAR COMPRA -->
                 <button
-                    type="button"
+                     type="button"
                     class="btn btn-premium-red w-100 fw-semibold"
-                >
-                    Finalizar compra
+                    id="btnFinalizarCompra"
+                    >
+                      Finalizar compra
                 </button>
 
 
@@ -235,12 +239,48 @@ foreach ($productos as $producto) {
 
 
 <script type="module">
+import { actualizarCantidad, eliminarDelCarrito, finalizarCompra } from "../../assets/js/carrito.js"
 
-    import { getAllCartProducts } from "../../assets/js/carrito.js";
+document.getElementById('cartItems').addEventListener('click', async (e) => {
+    const item = e.target.closest('.cart-item');
+    if (!item) return;
 
-    getAllCartProducts().then(data => {
-        console.log(data);
-    });
+    const idDetalle = parseInt(item.dataset.id, 10);
+
+    if (e.target.closest('.btn-eliminar')) {
+        if (!confirm('¿Eliminar este producto del carrito?')) return;
+        const resultado = await eliminarDelCarrito(idDetalle);
+        resultado.success ? location.reload() : alert(resultado.message);
+        return;
+    }
+
+    if (e.target.closest('.btn-menos') || e.target.closest('.btn-mas')) {
+        const spanCantidad = item.querySelector('.quantity-box span');
+        let nuevaCantidad = parseInt(spanCantidad.textContent, 10);
+        nuevaCantidad += e.target.closest('.btn-mas') ? 1 : -1;
+
+        if (nuevaCantidad <= 0) {
+            if (!confirm('¿Eliminar este producto del carrito?')) return;
+            const resultado = await eliminarDelCarrito(idDetalle);
+            resultado.success ? location.reload() : alert(resultado.message);
+            return;
+        }
+
+        const resultado = await actualizarCantidad(idDetalle, nuevaCantidad);
+        resultado.success ? location.reload() : alert(resultado.message);
+    }
+});
+
+document.getElementById('btnFinalizarCompra').addEventListener('click', async () => {
+    const resultado = await finalizarCompra();
+
+    if (resultado.success) {
+        alert(resultado.message);
+        location.reload();
+    } else {
+        alert(resultado.message);
+    }
+});
 
 </script>
 

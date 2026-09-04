@@ -7,6 +7,17 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
 
 $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
+
+//esto es para el numero que esta en el boton del carrito, para que no se borre
+require_once __DIR__ . '/../../controllers/auth/carrito.php';
+
+$id_usuario = 2; // temporal, igual que en el resto del carrito
+
+$resultadoCarrito = obtenerProductosDelCarrito($pdo, $id_usuario);
+$cantidadCarrito = 0;
+foreach ($resultadoCarrito['productos'] as $producto) {
+    $cantidadCarrito += (int) $producto['cantidad'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -65,7 +76,7 @@ $categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
                         <a href="<?= BASE_URL ?>/src/views/carrito.php"
                            class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
                            id="cartBtn">
-                           Mi Carrito (0)
+                           Mi Carrito (<?= $cantidadCarrito ?>)
                         </a>
                         <button
                             class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"

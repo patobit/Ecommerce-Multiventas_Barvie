@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/rutas.php';
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../controllers/productos_controller.php';
+require_once __DIR__ . '/../controllers/auth/productos_controller.php';
 
 $idProducto = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $producto = $idProducto > 0 ? obtenerProductoPorId($pdo, $idProducto) : null;

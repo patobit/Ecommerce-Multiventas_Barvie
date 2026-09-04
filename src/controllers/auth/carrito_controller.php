@@ -100,3 +100,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
     }
 }
+
+// ACTUALIZAR CANTIDAD DE UN PRODUCTO
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    $inputData = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    $id_detalle_carrito = isset($inputData['id_detalle_carrito']) ? (int) $inputData['id_detalle_carrito'] : 0;
+    $cantidad = isset($inputData['cantidad']) ? (int) $inputData['cantidad'] : 0;
+
+    if ($id_detalle_carrito <= 0 || $cantidad <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos.']);
+        exit;
+    }
+
+    try {
+        // Verificamos que el producto pertenezca al carrito activo del usuario
+        $sql = "SELECT dc.id_detalle_carrito
+                FROM detalle_carrito dc
+                INNER JOIN carritos c ON dc.id_carrito = c.id_carrito
+                WHERE dc.id_detalle_carrito = ? AND c.id_usuario = ? AND c.estado = 'Activo'
+                LIMIT 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$id_detalle_carrito, $id_usuario]);
+
+        if (!$stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'El producto no pertenece a tu carrito.']);
+            exit;
+        }
+
+        $sql = "UPDATE detalle_carrito SET cantidad = ? WHERE id_detalle_carrito = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$cantidad, $id_detalle_carrito]);
+
+        echo json_encode(['success' => true, 'message' => 'Cantidad actualizada correctamente.']);
+        exit;
+
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error SQL: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// ELIMINAR PRODUCTO DEL CARRITO
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $inputData = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    $id_detalle_carrito = isset($inputData['id_detalle_carrito']) ? (int) $inputData['id_detalle_carrito'] : 0;
+
+    if ($id_detalle_carrito <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de producto inválido.']);
+        exit;
+    }
+
+    try {
+        $sql = "SELECT dc.id_detalle_carrito
+                FROM detalle_carrito dc
+                INNER JOIN carritos c ON dc.id_carrito = c.id_carrito
+                WHERE dc.id_detalle_carrito = ? AND c.id_usuario = ? AND c.estado = 'Activo'
+                LIMIT 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$id_detalle_carrito, $id_usuario]);
+
+        if (!$stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'El producto no pertenece a tu carrito.']);
+            exit;
+        }
+
+        $sql = "DELETE FROM detalle_carrito WHERE id_detalle_carrito = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$id_detalle_carrito]);
+
+        echo json_encode(['success' => true, 'message' => 'Producto eliminado del carrito.']);
+        exit;
+
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error SQL: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// OBTENER TODOS LOS PRODUCTOS DEL CARRITO
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    require_once __DIR__ . '/carrito.php'; // trae obtenerProductosDelCarrito()
+
+    $resultado = obtenerProductosDelCarrito($pdo, $id_usuario);
+
+    echo json_encode($resultado);
+    exit;
+}
