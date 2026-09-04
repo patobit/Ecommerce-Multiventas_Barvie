@@ -1,10 +1,23 @@
+// Detecta la ruta base del proyecto de forma dinámica
+const BASE_URL = window.BASE_URL || window.location.pathname.substring(0, window.location.pathname.indexOf('/src'));
+
+let cartCount = 0;
+const cartButton = document.getElementById('cartBtn');
+
 export async function getAllCartProducts() {
-    const endpoint = '/src/controllers/auth/carrito.php';
+    // Usamos BASE_URL para armar la ruta dinámica
+    const endpoint = `${BASE_URL}/src/controllers/auth/carrito.php`;
 
     try {
-        const res = await fetch(endpoint, {method: 'GET'});
+        const res = await fetch(endpoint, { method: 'GET' });
         const text = await res.text();
-        return JSON.parse(text);
+        
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Respuesta no es JSON válido:', text);
+            return null;
+        }
     } catch (error) {
         console.error('Error al obtener productos del carrito:', error);
         return null;
@@ -24,8 +37,8 @@ export function addToCart(id, cantidad = 1, nombre = 'Producto') {
     datos.append('id_producto', idProducto);
     datos.append('cantidad', cantidad);
 
-    // Ruta absoluta desde la raíz del servidor http://localhost:8000/
-    const endpoint = '/src/controllers/auth/carrito_controller.php';
+    // Mantenemos la ruta dinámica con BASE_URL hacia el controlador
+    const endpoint = `${BASE_URL}/src/controllers/auth/carrito.php`;
 
     fetch(endpoint, {
         method: 'POST',
@@ -33,8 +46,7 @@ export function addToCart(id, cantidad = 1, nombre = 'Producto') {
     })
     .then(async response => {
         const text = await response.text();
-        
-        
+
         if (!response.ok) {
             throw new Error(`Error en servidor (${response.status})`);
         }
@@ -53,7 +65,11 @@ export function addToCart(id, cantidad = 1, nombre = 'Producto') {
                 cartButton.textContent = `Mi Carrito (${cartCount})`;
             }
 
-            showToast(nombre);
+            if (typeof showToast === 'function') {
+                showToast(nombre);
+            } else {
+                alert(`Agregado: ${nombre}`);
+            }
         } else {
             alert(data.message || 'No se pudo agregar el producto.');
         }
