@@ -1,9 +1,20 @@
 <?php
-// RUTA BASE DEL PROYECTO
-// Esta constante se antepone a los links de navegación y a los assets
-// (CSS, JS) para que funcionen sin importar desde qué carpeta se sirva
-// el archivo PHP (raíz, src/views/, etc.).
-// Ajustá el valor de abajo según cuál sea tu caso.
+// RUTA BASE DEL PROYECTO (DETECCIÓN AUTOMÁTICA Y DINÁMICA)
 if (!defined('BASE_URL')) {
-    define('BASE_URL', '/Multiventas_Barvie');
+    // $_SERVER['SCRIPT_NAME'] es una variable del sistema PHP, déjala TAL CUAL.
+    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+
+    // Busca dónde empieza la carpeta '/src/' en la URL
+    $pos = strpos($scriptName, '/src/');
+
+    if ($pos !== false) {
+        // Si está ejecutando desde adentro de 'src' (ej: /src/views/catalogo.php),
+        // recorta la URL justo antes de '/src'
+        $baseUrl = substr($scriptName, 0, $pos);
+    } else {
+        // Si está en la raíz (ej: /index.php), toma el directorio padre
+        $baseUrl = rtrim(dirname($scriptName), '/\\');
+    }
+
+    define('BASE_URL', $baseUrl);
 }
