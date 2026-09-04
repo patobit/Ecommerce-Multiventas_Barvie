@@ -3,14 +3,24 @@ CREATE DATABASE multiventas;
 USE multiventas;
 
 CREATE TABLE usuarios (
-id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-nombre VARCHAR(50) NOT NULL,
-apellido VARCHAR(50) NOT NULL,
-email VARCHAR(100) NOT NULL UNIQUE,
-telefono VARCHAR(20),
-direccion VARCHAR(200),
-rol VARCHAR(50),
-);
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    clave VARCHAR(255) NOT NULL,
+    telefono VARCHAR(50) DEFAULT NULL,
+    provincia VARCHAR(100) DEFAULT NULL,
+    ciudad VARCHAR(100) DEFAULT NULL,
+    direccion VARCHAR(255) DEFAULT NULL,
+    auto_marca VARCHAR(100) DEFAULT NULL,
+    auto_modelo VARCHAR(100) DEFAULT NULL,
+    auto_anio INT DEFAULT NULL,
+    frecuencia_compra ENUM('ocasional', 'mensual', 'frecuente') DEFAULT NULL,
+    acepta_descuentos TINYINT(1) DEFAULT 0,
+    acepta_promociones TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE categorias (
 id_categoria INT AUTO_INCREMENT PRIMARY KEY,
