@@ -60,7 +60,7 @@ require_once __DIR__ . '/src/views/_layouts/header.php';
                         </div>
                     </div>
                 <?php endforeach; ?>
-
+<h1>hola</h1>
             </div>
         </div>
     </main>
