@@ -7,10 +7,11 @@
 // espera recibir el array $p ya resuelto (por eso puede usarse en la home,
 // en el catálogo, etc. sin importar de dónde vino el dato).
 //
-// El array $p debe tener las columnas de la tabla `productos`
-// (id_producto, nombre, descripcion, imagen, stock, precio, id_categoria)
-// más 'categoria_nombre' (viene de un JOIN con `categorias`).
-// Opcionalmente puede traer 'precio_oferta' si esa columna existe.
+// El array $p viene de productos_controller.php -> mapearProducto(), con las
+// claves: id_producto, nombre, descripcion, imagenes (array de URLs), stock,
+// precio, id_categoria, categoria_nombre.
+// Opcionalmente puede traer 'precio_oferta' si en el futuro se agrega ese
+// campo en Strapi (por ahora nunca viene, así que $tieneOferta da false).
 
 function renderProductCard(array $p): string
 {
@@ -34,10 +35,13 @@ function renderProductCard(array $p): string
         } else {
             $precioHtml = '<span class="fs-5 fw-bold text-white">$' . $precio . '</span>';
     }
-    
-    // Imagen real si existe, o un placeholder si el producto todavía no tiene una cargada
-    if (!empty($p['imagen'])) {
-        $imagenHtml = '<img src="' . BASE_URL . '/assets/img/' . htmlspecialchars($p['imagen']) . '" '
+
+    // Imagen real si existe, o un placeholder si el producto todavía no tiene una cargada.
+    // Las URLs de 'imagenes' ya vienen absolutas (apuntan al servidor de Strapi),
+    // así que NO hay que anteponerles BASE_URL/assets/img/ como antes.
+    $primeraImagen = $p['imagenes'][0] ?? null;
+    if ($primeraImagen) {
+        $imagenHtml = '<img src="' . htmlspecialchars($primeraImagen) . '" '
         . 'class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;" alt="' . htmlspecialchars($p['nombre']) . '">';
         } else {
             $imagenHtml = '<div class="w-100 rounded-3 mb-3 d-flex align-items-center justify-content-center" '

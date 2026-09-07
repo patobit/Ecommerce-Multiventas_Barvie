@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../controllers/auth/productos_controller.php';
 
 $idProducto = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-$producto = $idProducto > 0 ? obtenerProductoPorId($pdo, $idProducto) : null;
+$producto = $idProducto > 0 ? obtenerProductoPorId($idProducto) : null;
 
 require_once __DIR__ . '/_layouts/header.php';
 ?>
@@ -27,6 +27,9 @@ require_once __DIR__ . '/_layouts/header.php';
                  ================================================================ -->
             <?php
                 $precio = number_format((float) $producto['precio'], 2, ',', '.');
+                // NOTA: 'precio_oferta' todavía no existe como campo en Strapi,
+                // así que $tieneOferta siempre da false por ahora (ver aviso en
+                // productos_controller.php -> obtenerProductosOferta()).
                 $tieneOferta = !empty($producto['precio_oferta']) && (float) $producto['precio_oferta'] < (float) $producto['precio'];
 
                 if ((int) $producto['stock'] <= 0) {
@@ -36,6 +39,11 @@ require_once __DIR__ . '/_layouts/header.php';
                 } else {
                     $stockHtml = '<span class="text-success fw-semibold">● Stock disponible (' . (int) $producto['stock'] . ')</span>';
                 }
+
+                // Strapi puede devolver varias imágenes por producto (campo "Imagen"
+                // es "multiple"), ya como URLs absolutas. Antes era un solo nombre
+                // de archivo local en /assets/img/.
+                $imagenes = $producto['imagenes'] ?? [];
             ?>
 
             <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int) $producto['id_categoria'] ?>" class="text-secondary text-decoration-none small d-inline-block mb-4">← Volver a <?= htmlspecialchars($producto['categoria_nombre']) ?></a>
@@ -46,28 +54,30 @@ require_once __DIR__ . '/_layouts/header.php';
                 <div class="col-12 col-lg-6">
                     <div id="productoCarousel" class="carousel slide bg-dark border border-secondary border-opacity-25 rounded-3 overflow-hidden" data-bs-ride="false">
                         <div class="carousel-inner">
-                            <div class="carousel-item active">
-                                <?php if (!empty($producto['imagen'])): ?>
-                                    <img src="<?= BASE_URL ?>/assets/img/<?= htmlspecialchars($producto['imagen']) ?>"
-                                         class="d-block w-100" style="height:420px;object-fit:cover;"
-                                         alt="<?= htmlspecialchars($producto['nombre']) ?>">
-                                <?php else: ?>
+                            <?php if (!empty($imagenes)): ?>
+                                <?php foreach ($imagenes as $i => $url): ?>
+                                    <div class="carousel-item <?= $i === 0 ? 'active' : '' ?>">
+                                        <img src="<?= htmlspecialchars($url) ?>"
+                                             class="d-block w-100" style="height:420px;object-fit:cover;"
+                                             alt="<?= htmlspecialchars($producto['nombre']) ?>">
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="carousel-item active">
                                     <div class="d-flex align-items-center justify-content-center" style="height:420px;background-color:#0b0c0e;">
                                         <span class="text-secondary">Sin imagen todavía</span>
                                     </div>
-                                <?php endif; ?>
-                            </div>
-                            <!-- TODO: cuando haya varias fotos por producto, agregar acá más <div class="carousel-item"> -->
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <!-- Controles ocultos por ahora (solo hay 1 foto); al agregar más fotos, descomentar: -->
-                        <!--
-                        <button class="carousel-control-prev" type="button" data-bs-target="#productoCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#productoCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon"></span>
-                        </button>
-                        -->
+                        <?php if (count($imagenes) > 1): ?>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#productoCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#productoCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
 

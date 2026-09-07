@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/rutas.php';                     // define BASE_URL
-require_once __DIR__ . '/../config/database.php';                  // define $pdo
-require_once __DIR__ . '/../controllers/auth/productos_controller.php'; // consultas a la DB
+require_once __DIR__ . '/../config/database.php';                  // define $pdo (todavía lo usan carrito/checkout/login)
+require_once __DIR__ . '/../controllers/auth/productos_controller.php'; // consultas a Strapi
 require_once __DIR__ . '/productos_card.php';                       // renderProductCard()
 
 // ---------------------------------------------------------------------------
@@ -18,21 +18,21 @@ $productos = [];
 if ($busqueda !== '') {
     // Si hay búsqueda activa, ignoramos la navegación por categorías
     // y mostramos directamente los resultados que matchean el texto.
-    $productos = buscarProductos($pdo, $busqueda);
+    $productos = buscarProductos($busqueda);
 } elseif ($categoriaId !== null) {
-    $categoriaActual = obtenerCategoriaPorId($pdo, $categoriaId);
+    $categoriaActual = obtenerCategoriaPorId($categoriaId);
 
     if ($categoriaActual) {
-        $subcategorias = obtenerCategorias($pdo, $categoriaId);
+        $subcategorias = obtenerCategorias($categoriaId);
         // Si la categoría no tiene subcategorías, es una categoría "hoja" -> mostramos sus productos
         if (empty($subcategorias)) {
-            $productos = obtenerProductosPorCategoria($pdo, $categoriaId);
+            $productos = obtenerProductosPorCategoria($categoriaId);
         }
     }
 }
 
 if ($busqueda === '' && $categoriaId === null) {
-    $subcategorias = obtenerCategorias($pdo, null); // categorías principales
+    $subcategorias = obtenerCategorias(null); // categorías principales
 }
 
 require_once __DIR__ . '/_layouts/header.php';
@@ -68,7 +68,7 @@ require_once __DIR__ . '/_layouts/header.php';
                  ============================================================ -->
             <div class="row g-4">
                 <?php foreach ($subcategorias as $cat): ?>
-                    <?php $cantidad = contarProductosEnCategoria($pdo, $cat['id_categoria']); ?>
+                    <?php $cantidad = contarProductosEnCategoria($cat['id_categoria']); ?>
                     <div class="col-12 col-sm-6 col-lg-4">
                         <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int) $cat['id_categoria'] ?>" class="text-decoration-none">
                             <div class="card card-premium h-100 p-4 text-center">

@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "detalle_compras",
+  "info": {
+    "singularName": "detalle-compra",
+    "pluralName": "detalle-compras",
+    "displayName": "Detalle_compra"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Cantidad": {
+      "type": "integer"
+    },
+    "Precio_unitario": {
+      "type": "decimal"
+    },
+    "compra": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::compra.compra",
+      "inversedBy": "detalle_compras"
+    },
+    "producto": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::producto.producto",
+      "inversedBy": "detalle_compras"
+    }
+  }
+}

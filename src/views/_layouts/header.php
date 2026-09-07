@@ -1,22 +1,26 @@
 <?php
-// El header necesita su propia conexión porque se incluye desde páginas a
-// distinta profundidad (raíz, src/views/, etc.) — require_once evita que se
-// duplique si el archivo que lo incluyó ya la había cargado antes.
+// El header necesita poder arrancar sesión porque se incluye desde páginas a
+// distinta profundidad (raíz, src/views/, etc.) y algunas de esas páginas
+// (como catalogo.php) no la inician antes de llegar acá.
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../../config/rutas.php';
-require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
-
-$categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
-
-//esto es para el numero que esta en el boton del carrito, para que no se borre
 require_once __DIR__ . '/../../controllers/auth/carrito.php';
 
-$id_usuario = 2; // temporal, igual que en el resto del carrito
+$categoriasNavbar = obtenerCategorias(null); // categorías principales
 
-$resultadoCarrito = obtenerProductosDelCarrito($pdo, $id_usuario);
+// Contador del botón "Mi Carrito". Antes usaba un id_usuario=2 "temporal";
+// ahora que el login es real, si no hay nadie logueado el contador queda en 0
+// (no tiene sentido pedirle el carrito a Strapi sin un usuario autenticado).
 $cantidadCarrito = 0;
-foreach ($resultadoCarrito['productos'] as $producto) {
-    $cantidadCarrito += (int) $producto['cantidad'];
+if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
+    $resultadoCarrito = obtenerProductosDelCarrito($_SESSION['usuario']['jwt'], (int) $_SESSION['usuario']['id']);
+    foreach ($resultadoCarrito['productos'] as $producto) {
+        $cantidadCarrito += (int) $producto['cantidad'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -78,11 +82,18 @@ foreach ($resultadoCarrito['productos'] as $producto) {
                            id="cartBtn">
                            Mi Carrito (<?= $cantidadCarrito ?>)
                         </a>
-                        <button
-                            class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"
-                            data-bs-toggle="modal" data-bs-target="#authModal">
-                            Ingresar
-                        </button>
+                        <?php if (!empty($_SESSION['usuario'])): ?>
+                            <a href="<?= BASE_URL ?>/src/controllers/auth/logout.php"
+                               class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50">
+                                Salir (<?= htmlspecialchars($_SESSION['usuario']['name']) ?>)
+                            </a>
+                        <?php else: ?>
+                            <button
+                                class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"
+                                data-bs-toggle="modal" data-bs-target="#authModal">
+                                Ingresar
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

@@ -1,144 +1,222 @@
 <?php
 // =============================================================================
-// CONSULTAS A LA BASE DE DATOS + RENDERIZADO DE TARJETAS DE PRODUCTO
+// CONSULTAS A STRAPI (API REST) + MAPEO A ARRAYS "ESTILO PDO"
 // =============================================================================
-// Todas las funciones reciben $pdo (la conexión) como parámetro, así queda
-// explícito de dónde viene cada dato y es más fácil de testear.
+// Usa el cliente HTTP compartido (strapi_client.php) para no repetir curl.
+// Cada función devuelve arrays con las mismas claves que antes devolvía el
+// SELECT con PDO (id_producto, nombre, categoria_nombre, etc.) para que el
+// resto del proyecto no tenga que reescribirse.
 
-/**
- * Últimos productos cargados (para la sección "Nuevos Ingresos").
- */
-function obtenerProductosNuevos(PDO $pdo, int $limite = 4): array
+require_once __DIR__ . '/../../config/strapi_client.php';
+
+// -----------------------------------------------------------------------
+// MAPEO: de la forma "Strapi" a la forma "antigua estilo PDO"
+// -----------------------------------------------------------------------
+
+function mapearProducto(array $item): array
 {
-    $sql = "SELECT p.*, c.nombre AS categoria_nombre
-            FROM productos p
-            JOIN categorias c ON c.id_categoria = p.id_categoria
-            ORDER BY p.id_producto DESC
-            LIMIT :limite";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
-    $stmt->execute();
-    return $stmt->fetchAll();
+    $categoria = $item['categoria'] ?? null;
+
+    return [
+        'id_producto'      => $item['id'] ?? null,
+        'document_id'      => $item['documentId'] ?? null,
+        'nombre'           => $item['Nombre'] ?? '',
+        'descripcion'      => $item['Descripcion'] ?? '',
+        'stock'            => $item['Stock'] ?? 0,
+        'precio'           => $item['Precio'] ?? 0,
+        'imagenes'         => mapearImagenes($item['Imagen'] ?? null),
+        'id_categoria'     => $categoria['id'] ?? null,
+        'categoria_nombre' => $categoria['Nombre'] ?? null,
+    ];
 }
 
-/**
- * El producto con más unidades vendidas, sumando detalle_compra.
- * Devuelve un array vacío si todavía no hay compras cargadas (no rompe la página).
- */
-function obtenerProductoMasVendido(PDO $pdo): array
+function mapearImagenes(mixed $imagenData): array
 {
-    $sql = "SELECT p.*, c.nombre AS categoria_nombre, SUM(dc.cantidad) AS total_vendido
-            FROM detalle_compra dc
-            JOIN productos p ON p.id_producto = dc.id_producto
-            JOIN categorias c ON c.id_categoria = p.id_categoria
-            GROUP BY p.id_producto
-            ORDER BY total_vendido DESC
-            LIMIT 1";
-    $stmt = $pdo->query($sql);
-    return $stmt->fetchAll();
-}
-
-/**
- * Productos con precio de oferta activo (para "Ofertas de la Semana").
- * Requiere la columna opcional productos.precio_oferta (ver ALTER TABLE sugerido).
- * Si la columna no existe todavía, devuelve [] en vez de romper la página.
- */
-function obtenerProductosOferta(PDO $pdo, int $limite = 4): array
-{
-    try {
-        $sql = "SELECT p.*, c.nombre AS categoria_nombre
-                FROM productos p
-                JOIN categorias c ON c.id_categoria = p.id_categoria
-                WHERE p.precio_oferta IS NOT NULL AND p.precio_oferta < p.precio
-                ORDER BY p.id_producto DESC
-                LIMIT :limite";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
+    if (!$imagenData) {
         return [];
     }
-}
-
-/**
- * Categorías principales (sin padre) o subcategorías de una categoría dada.
- * Pasá $idPadre = null para traer las categorías de nivel superior.
- */
-function obtenerCategorias(PDO $pdo, ?int $idPadre = null): array
-{
-    if ($idPadre === null) {
-        $stmt = $pdo->query("SELECT * FROM categorias WHERE id_categoria_padre IS NULL ORDER BY nombre");
-    } else {
-        $stmt = $pdo->prepare("SELECT * FROM categorias WHERE id_categoria_padre = :padre ORDER BY nombre");
-        $stmt->execute([':padre' => $idPadre]);
+    $items = $imagenData['data'] ?? $imagenData;
+    if (!is_array($items)) {
+        return [];
     }
-    return $stmt->fetchAll();
+
+    $urls = [];
+    foreach ($items as $img) {
+        $attrs = $img['attributes'] ?? $img;
+        if (!empty($attrs['url'])) {
+            // Si la URL ya viene absoluta (ej: un proveedor externo tipo
+            // Cloudinary/S3), se usa tal cual. Si es relativa (guardado
+            // local, ej: "/uploads/foto_123.png"), se le antepone la URL
+            // de Strapi.
+            $esAbsoluta = str_starts_with($attrs['url'], 'http://') || str_starts_with($attrs['url'], 'https://');
+            $urls[] = $esAbsoluta ? $attrs['url'] : rtrim(STRAPI_URL, '/') . $attrs['url'];
+        }
+    }
+    return $urls;
+}
+
+function mapearCategoria(array $item): array
+{
+    $padre = $item['categoria'] ?? null;
+
+    return [
+        'id_categoria'       => $item['id'] ?? null,
+        'document_id'        => $item['documentId'] ?? null,
+        'nombre'             => $item['Nombre'] ?? '',
+        'descripcion'        => $item['Descripcion'] ?? '',
+        'id_categoria_padre' => $padre['id'] ?? null,
+    ];
+}
+
+// -----------------------------------------------------------------------
+// FUNCIONES PÚBLICAS (misma firma que el controller original, sin $pdo)
+// -----------------------------------------------------------------------
+
+function obtenerProductosNuevos(int $limite = 4): array
+{
+    $resultado = strapiRequest('GET', 'productos', [
+        'sort'       => 'id:desc',
+        'populate'   => ['categoria', 'Imagen'],
+        'pagination' => ['limit' => $limite],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return array_map('mapearProducto', $items);
 }
 
 /**
- * Trae una categoría puntual por su id (para saber su nombre y su padre).
+ * SUPUESTO A CONFIRMAR: content-type 'detalle-compra' (endpoint 'detalle-compras')
+ * con campo 'Cantidad' — confirmado por el schema.json que pasaste. La
+ * agregación (SUM por producto) se hace acá en PHP porque la API REST de
+ * Strapi no hace GROUP BY. Si el catálogo de compras crece mucho, conviene
+ * un endpoint custom en Strapi que agregue en la base de datos.
  */
-function obtenerCategoriaPorId(PDO $pdo, int $id): ?array
+function obtenerProductoMasVendido(): array
 {
-    $stmt = $pdo->prepare("SELECT * FROM categorias WHERE id_categoria = :id");
-    $stmt->execute([':id' => $id]);
-    $cat = $stmt->fetch();
-    return $cat ?: null;
+    $resultado = strapiRequest('GET', 'detalle-compras', [
+        'populate'   => ['producto' => ['populate' => ['categoria', 'Imagen']]],
+        'pagination' => ['limit' => 1000],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    if (empty($items)) {
+        return [];
+    }
+
+    $totales = [];
+    foreach ($items as $detalle) {
+        $producto = $detalle['producto'] ?? null;
+        if (!$producto) {
+            continue;
+        }
+        $cantidad = $detalle['Cantidad'] ?? 0;
+        $idProd   = $producto['id'];
+
+        if (!isset($totales[$idProd])) {
+            $totales[$idProd] = ['producto' => $producto, 'total' => 0];
+        }
+        $totales[$idProd]['total'] += (int) $cantidad;
+    }
+
+    if (empty($totales)) {
+        return [];
+    }
+
+    usort($totales, fn($a, $b) => $b['total'] <=> $a['total']);
+    $ganador = $totales[0];
+
+    $productoMapeado = mapearProducto($ganador['producto']);
+    $productoMapeado['total_vendido'] = $ganador['total'];
+
+    // Envuelto en array porque index.php espera una LISTA para hacer foreach().
+    return [$productoMapeado];
 }
 
 /**
- * Cuenta cuántos productos hay cargados directamente en una categoría.
+ * PENDIENTE: "Producto" todavía no tiene un campo de precio de oferta en
+ * Strapi. Devuelve [] hasta que se agregue (ej. "Precio_oferta", decimal).
  */
-function contarProductosEnCategoria(PDO $pdo, int $idCategoria): int
+function obtenerProductosOferta(int $limite = 4): array
 {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM productos WHERE id_categoria = :id");
-    $stmt->execute([':id' => $idCategoria]);
-    return (int) $stmt->fetchColumn();
+    return [];
 }
 
-/**
- * Todos los productos que pertenecen a una categoría puntual.
- */
-function obtenerProductosPorCategoria(PDO $pdo, int $idCategoria): array
+function obtenerCategorias(?int $idPadre = null): array
 {
-    $sql = "SELECT p.*, c.nombre AS categoria_nombre
-            FROM productos p
-            JOIN categorias c ON c.id_categoria = p.id_categoria
-            WHERE p.id_categoria = :id
-            ORDER BY p.nombre";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':id' => $idCategoria]);
-    return $stmt->fetchAll();
+    $filtro = $idPadre === null
+        ? ['categoria' => ['id' => ['$null' => true]]]
+        : ['categoria' => ['id' => ['$eq' => $idPadre]]];
+
+    $resultado = strapiRequest('GET', 'categorias', [
+        'filters' => $filtro,
+        'sort'    => 'Nombre:asc',
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return array_map('mapearCategoria', $items);
 }
 
-/**
- * Trae un producto puntual por su id (para la vista de detalle).
- */
-function obtenerProductoPorId(PDO $pdo, int $id): ?array
+function obtenerCategoriaPorId(int $id): ?array
 {
-    $sql = "SELECT p.*, c.nombre AS categoria_nombre
-            FROM productos p
-            JOIN categorias c ON c.id_categoria = p.id_categoria
-            WHERE p.id_producto = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':id' => $id]);
-    $producto = $stmt->fetch();
-    return $producto ?: null;
+    $resultado = strapiRequest('GET', 'categorias', [
+        'filters'    => ['id' => ['$eq' => $id]],
+        'populate'   => ['categoria'],
+        'pagination' => ['limit' => 1],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return empty($items) ? null : mapearCategoria($items[0]);
 }
 
-/**
- * Búsqueda de productos por nombre o descripción (usada por catalogo.php con $_GET['buscar']).
- */
-function buscarProductos(PDO $pdo, string $termino): array
+function contarProductosEnCategoria(int $idCategoria): int
 {
-    $like = '%' . $termino . '%';
-    $sql = "SELECT p.*, c.nombre AS categoria_nombre
-            FROM productos p
-            JOIN categorias c ON c.id_categoria = p.id_categoria
-            WHERE p.nombre LIKE :termino OR p.descripcion LIKE :termino
-            ORDER BY p.nombre";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':termino' => $like]);
-    return $stmt->fetchAll();
+    $resultado = strapiRequest('GET', 'productos', [
+        'filters'    => ['categoria' => ['id' => ['$eq' => $idCategoria]]],
+        'pagination' => ['limit' => 1],
+    ]);
+
+    return $resultado['data']['meta']['pagination']['total'] ?? 0;
+}
+
+function obtenerProductosPorCategoria(int $idCategoria): array
+{
+    $resultado = strapiRequest('GET', 'productos', [
+        'filters'    => ['categoria' => ['id' => ['$eq' => $idCategoria]]],
+        'populate'   => ['categoria', 'Imagen'],
+        'sort'       => 'Nombre:asc',
+        'pagination' => ['start' => 0, 'limit' => 100],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return array_map('mapearProducto', $items);
+}
+
+function obtenerProductoPorId(int $id): ?array
+{
+    $resultado = strapiRequest('GET', 'productos', [
+        'filters'    => ['id' => ['$eq' => $id]],
+        'populate'   => ['categoria', 'Imagen'],
+        'pagination' => ['limit' => 1],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return empty($items) ? null : mapearProducto($items[0]);
+}
+
+function buscarProductos(string $termino): array
+{
+    $resultado = strapiRequest('GET', 'productos', [
+        'filters' => [
+            '$or' => [
+                ['Nombre'      => ['$containsi' => $termino]],
+                ['Descripcion' => ['$containsi' => $termino]],
+            ],
+        ],
+        'populate'   => ['categoria', 'Imagen'],
+        'sort'       => 'Nombre:asc',
+        'pagination' => ['start' => 0, 'limit' => 100],
+    ]);
+
+    $items = $resultado['data']['data'] ?? [];
+    return array_map('mapearProducto', $items);
 }
