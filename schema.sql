@@ -374,3 +374,16 @@ VALUES
 'Varios productos de seguridad y emergencia',
 4
 );
+
+
+--Esta la pueden borrar luego
+CREATE TABLE IF NOT EXISTS posts (
+    id         CHAR(36)     NOT NULL DEFAULT (UUID()),
+    title      VARCHAR(255) NOT NULL,
+    content    TEXT         NOT NULL,    
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id    CHAR(36)     NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
