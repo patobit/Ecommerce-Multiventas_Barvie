@@ -9,6 +9,9 @@
 # Logs
 *.log
 
+# Historial privado del chatbot
+/storage/*.db*
+
 # Cache / temp files
 /tmp/
 /cache/

@@ -101,6 +101,7 @@
         window.BASE_URL = "<?= BASE_URL ?>";
     </script>
     <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
+<?php require_once __DIR__ . '/chatbot.php'; ?>
 </body>
 
 </html>

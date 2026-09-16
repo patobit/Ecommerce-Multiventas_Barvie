@@ -2,6 +2,11 @@
 
 # Multiventas Barvie
 
+## Chatbot integrado
+
+La tienda incluye un asistente con respuestas programadas e historial en SQLite.
+Ver [CHATBOT.md](CHATBOT.md) para los archivos, requisitos y el guion de presentación.
+
 ## Proyecto Final - PDISC 7° Año 4° División
 
 ### Integrantes del grupo

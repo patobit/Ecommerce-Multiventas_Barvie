@@ -1,4 +1,8 @@
-<?php   
+<?php 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/src/config/rutas.php';                     // Define BASE_URL
 require_once __DIR__ . '/src/config/database.php';                  // Define $pdo
 require_once __DIR__ . '/src/controllers/auth/productos_controller.php'; // Consultas a la DB

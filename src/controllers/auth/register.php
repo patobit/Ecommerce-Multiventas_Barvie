@@ -2,6 +2,11 @@
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
 
+// Asegurar que la sesión esté iniciada
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Validar que el acceso sea exclusivamente por método POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . BASE_URL . '/src/views/auth/register.php');
@@ -45,7 +50,7 @@ if (strlen($datos['clave']) < 8) {
 
 try {
     // --- 4. Verificar si el email ya existe ---
-    $verificacion = $pdo->prepare('SELECT id FROM usuarios WHERE email = :email');
+    $verificacion = $pdo->prepare('SELECT id_usuario FROM usuarios WHERE email = :email');
     $verificacion->execute(['email' => $datos['email']]);
     if ($verificacion->fetch()) {
         header('Location: ' . BASE_URL . '/src/views/auth/register.php?error=email');
@@ -82,19 +87,22 @@ try {
         'acepta_promociones' => $aceptaPromociones,
     ]);
 
-    // --- 7. Cargar la Sesión del Usuario ---
-    $_SESSION['usuario'] = [
-        'id'       => $pdo->lastInsertId(),
-        'nombre'   => $datos['nombre'],
-        'apellido' => $datos['apellido'],
-        'email'    => $datos['email'],
+    $nuevoId = $pdo->lastInsertId();
+
+    // --- 7. Guardar Datos de Sesión ---
+    $_SESSION['usuario_id'] = $nuevoId;
+    $_SESSION['nombre']     = $datos['nombre'];
+    $_SESSION['usuario']    = [
+        'id_usuario' => $nuevoId,
+        'nombre'     => $datos['nombre'],
+        'apellido'   => $datos['apellido'],
+        'email'      => $datos['email'],
     ];
 
-    // --- 8. Redirección Exitosa ---
-    header('Location: ' . BASE_URL . '/src/views/index.php');
+    // Redirigir al inicio logueado
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 
 } catch (PDOException $e) {
-    // Te muestra en pantalla el motivo exacto por el cual falla la base de datos
     die("Error en la Base de Datos: " . $e->getMessage());
 }

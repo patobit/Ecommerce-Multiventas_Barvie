@@ -1,22 +1,26 @@
 <?php
-// El header necesita su propia conexión porque se incluye desde páginas a
-// distinta profundidad (raíz, src/views/, etc.) — require_once evita que se
-// duplique si el archivo que lo incluyó ya la había cargado antes.
+// Iniciar sesión para detectar si el usuario se registró o inició sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
 
-$categoriasNavbar = obtenerCategorias($pdo, null); // categorías principales
+$categoriasNavbar = obtenerCategorias($pdo, null);
 
-//esto es para el numero que esta en el boton del carrito, para que no se borre
 require_once __DIR__ . '/../../controllers/auth/carrito.php';
 
-$id_usuario = 2; // temporal, igual que en el resto del carrito
+// Si el usuario inició sesión, usamos su ID real de la sesión; de lo contrario, usamos un valor por defecto/invitado
+$id_usuario = $_SESSION['usuario_id'] ?? 2; 
 
 $resultadoCarrito = obtenerProductosDelCarrito($pdo, $id_usuario);
 $cantidadCarrito = 0;
-foreach ($resultadoCarrito['productos'] as $producto) {
-    $cantidadCarrito += (int) $producto['cantidad'];
+if (isset($resultadoCarrito['productos']) && is_array($resultadoCarrito['productos'])) {
+    foreach ($resultadoCarrito['productos'] as $producto) {
+        $cantidadCarrito += (int) $producto['cantidad'];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -25,7 +29,7 @@ foreach ($resultadoCarrito['productos'] as $producto) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiventas Barvie - Accesorios y Repuestos Premium</title>
+    <title>MVB - Accesorios y Repuestos Premium</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
@@ -37,8 +41,9 @@ foreach ($resultadoCarrito['productos'] as $producto) {
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark navbar-premium py-3">
             <div class="container">
+                <!-- Marca actualizada a MVB -->
                 <a class="navbar-brand fw-bold text-uppercase tracking-wider" href="<?= BASE_URL ?>/index.php">
-                    <span class="text-white">Multiventas</span><span class="text-danger"> Barvie</span>
+                    <span class="text-white">MVB</span>
                 </a>
                 <div class="flex-grow-1 mx-lg-4 my-2 my-lg-0 order-3 order-lg-0 position-relative" id="searchWrapper">
                     <form class="d-flex" role="search" id="searchForm">
@@ -76,18 +81,33 @@ foreach ($resultadoCarrito['productos'] as $producto) {
                         <a href="<?= BASE_URL ?>/src/views/carrito.php"
                            class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
                            id="cartBtn">
-                           Mi Carrito (<?= $cantidadCarrito ?>)
+                            Mi Carrito (<?= $cantidadCarrito ?>)
                         </a>
-                        <button
-                            class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50"
-                            data-bs-toggle="modal" data-bs-target="#authModal">
-                            Ingresar
-                        </button>
+
+                        <!-- Detección de Usuario / Sesión -->
+                        <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['nombre'])): ?>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                    👤 <?= htmlspecialchars($_SESSION['nombre'] ?? $_SESSION['nombre_usuario'] ?? 'Mi Cuenta') ?>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userMenu">
+                                    <li><a href="<?= BASE_URL ?>/src/views/user/profile.php">⚙️ Mi Perfil</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/src/controllers/auth/logout.php">Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        <?php else: ?>
+                            <a href="<?= BASE_URL ?>/src/views/auth/login.php"
+                               class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold border-secondary border-opacity-50">
+                                Ingresar
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </nav>
-           <?php if (basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>                              
+        
+        <?php if (basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>                               
         <!-- Hero Section -->
         <div class="container py-5">
             <div class="row align-items-center g-5">
@@ -134,11 +154,11 @@ foreach ($resultadoCarrito['productos'] as $producto) {
                                 </div>
                             </div>
                         </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide-to="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Anterior</span>
                         </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide-to="next">
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Siguiente</span>
                         </button>
@@ -146,5 +166,5 @@ foreach ($resultadoCarrito['productos'] as $producto) {
                 </div>
             </div>
         </div>
-         <?php endif; ?>
+        <?php endif; ?>
     </header>

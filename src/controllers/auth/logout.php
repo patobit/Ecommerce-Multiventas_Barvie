@@ -23,5 +23,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Redirigir al inicio o a la vista de login
-header('Location: ' . BASE_URL . '/src/views/index.php');
+header('Location: ' . BASE_URL . '/index.php');
 exit;
