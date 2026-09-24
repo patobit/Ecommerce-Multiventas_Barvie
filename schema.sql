@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS multiventas;
 
 use multiventas;
 
-CREATE TABLE usuarios (
+ CREATE TABLE usuarios (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,

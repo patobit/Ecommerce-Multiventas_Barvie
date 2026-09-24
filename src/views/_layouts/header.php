@@ -1,26 +1,28 @@
 <?php
-// Iniciar sesión para detectar si el usuario se registró o inició sesión
+// El header necesita poder arrancar sesión porque se incluye desde páginas a
+// distinta profundidad (raíz, src/views/, etc.) y algunas de esas páginas
+// (como catalogo.php) no la inician antes de llegar acá.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/../../config/rutas.php';
-require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
-
-$categoriasNavbar = obtenerCategorias($pdo, null);
-
 require_once __DIR__ . '/../../controllers/auth/carrito.php';
 
-// Si el usuario inició sesión, usamos su ID real de la sesión; de lo contrario, usamos un valor por defecto/invitado
-$id_usuario = $_SESSION['usuario_id'] ?? 2; 
+$categoriasNavbar = obtenerCategorias(null); // categorías principales
 
-$resultadoCarrito = obtenerProductosDelCarrito($pdo, $id_usuario);
+// Contador del botón "Mi Carrito". Antes usaba un id_usuario=2 "temporal";
+// ahora que el login es real, si no hay nadie logueado el contador queda en 0
+// (no tiene sentido pedirle el carrito a Strapi sin un usuario autenticado).
 $cantidadCarrito = 0;
-if (isset($resultadoCarrito['productos']) && is_array($resultadoCarrito['productos'])) {
+if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
+    try {
+    $resultadoCarrito = obtenerProductosDelCarrito($_SESSION['usuario']['jwt'], (int) $_SESSION['usuario']['id']);
     foreach ($resultadoCarrito['productos'] as $producto) {
         $cantidadCarrito += (int) $producto['cantidad'];
     }
+    } catch (RuntimeException $e) { error_log($e->getMessage()); }
 }
 ?>
 <!DOCTYPE html>

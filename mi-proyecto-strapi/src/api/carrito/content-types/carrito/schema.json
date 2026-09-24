@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "carritos",
+  "info": {
+    "singularName": "carrito",
+    "pluralName": "carritos",
+    "displayName": "Carrito"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Estado": {
+      "type": "enumeration",
+      "enum": [
+        "Activo",
+        "Convertido",
+        "Abandonado"
+      ]
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "carritos"
+    },
+    "compra": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::compra.compra"
+    },
+    "envio": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::envio.envio"
+    },
+    "detalle_carritos": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::detalle-carrito.detalle-carrito",
+      "mappedBy": "carrito"
+    }
+  }
+}

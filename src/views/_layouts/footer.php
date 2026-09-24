@@ -100,7 +100,7 @@
         // (por ejemplo, para ir a la página de detalle de un producto).
         window.BASE_URL = "<?= BASE_URL ?>";
     </script>
-    <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/app.js?v=<?= time() ?>"></script>
 <?php require_once __DIR__ . '/chatbot.php'; ?>
 </body>
 

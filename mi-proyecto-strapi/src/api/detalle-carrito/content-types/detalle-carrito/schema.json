@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "detalle_carritos",
+  "info": {
+    "singularName": "detalle-carrito",
+    "pluralName": "detalle-carritos",
+    "displayName": "Detalle_carrito"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Cantidad": {
+      "type": "integer"
+    },
+    "carrito": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::carrito.carrito",
+      "inversedBy": "detalle_carritos"
+    },
+    "producto": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::producto.producto",
+      "inversedBy": "detalle_carritos"
+    }
+  }
+}

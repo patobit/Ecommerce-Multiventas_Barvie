@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "compras",
+  "info": {
+    "singularName": "compra",
+    "pluralName": "compras",
+    "displayName": "Compra"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Fecha": {
+      "type": "datetime"
+    },
+    "Total": {
+      "type": "decimal"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "compras"
+    },
+    "detalle_compras": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::detalle-compra.detalle-compra",
+      "mappedBy": "compra"
+    }
+  }
+}

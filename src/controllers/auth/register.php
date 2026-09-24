@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
+require_once __DIR__ . '/../../config/strapi_client.php';
 
 // Asegurar que la sesión esté iniciada
 if (session_status() === PHP_SESSION_NONE) {
@@ -22,7 +23,8 @@ $datos = [
     'repetir_clave' => $_POST['repetir_clave'] ?? '',
 ];
 
-// --- 2. Campos Opcionales ---
+// --- 2. Campos Opcionales (estos SÍ existen como atributos en el content-type
+//         "user" de Strapi, así que se guardan tal cual) ---
 $telefono          = trim($_POST['telefono'] ?? '') ?: null;
 $provincia         = trim($_POST['provincia'] ?? '') ?: null;
 $ciudad            = trim($_POST['ciudad'] ?? '') ?: null;
@@ -30,12 +32,21 @@ $direccion         = trim($_POST['direccion'] ?? '') ?: null;
 $autoMarca         = trim($_POST['auto_marca'] ?? '') ?: null;
 $autoModelo        = trim($_POST['auto_modelo'] ?? '') ?: null;
 $autoAnio          = !empty($_POST['auto_anio']) ? (int) $_POST['auto_anio'] : null;
-$frecuenciaCompra  = in_array($_POST['frecuencia_compra'] ?? '', ['ocasional', 'mensual', 'frecuente'], true) ? $_POST['frecuencia_compra'] : null;
-$aceptaDescuentos  = isset($_POST['acepta_descuentos']) ? 1 : 0;
-$aceptaPromociones = isset($_POST['acepta_promociones']) ? 1 : 0;
+$frecuenciaCompra  = $_POST['frecuencia_compra'] ?? '';
+$aceptaDescuentos  = isset($_POST['acepta_descuentos']);
+$aceptaPromociones = isset($_POST['acepta_promociones']);
+
+// El enum en Strapi usa mayúscula inicial ("Ocasional", "Mensual",
+// "Frecuente"), pero el formulario manda valores en minúscula. Se traduce acá.
+$mapaFrecuencia = [
+    'ocasional' => 'Ocasional',
+    'mensual'   => 'Mensual',
+    'frecuente' => 'Frecuente',
+];
+$frecuenciaCompraStrapi = $mapaFrecuencia[$frecuenciaCompra] ?? null;
 
 // --- 3. Validaciones de campos obligatorios ---
-if ($datos['email'] === '' || $datos['nombre'] === '' || $datos['apellido'] === '' || $datos['clave'] === '') {
+if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL) || $datos['email'] === '' || $datos['nombre'] === '' || $datos['apellido'] === '' || $datos['clave'] === '') {
     header('Location: ' . BASE_URL . '/src/views/auth/register.php?error=1');
     exit;
 }
@@ -48,61 +59,48 @@ if (strlen($datos['clave']) < 8) {
     exit;
 }
 
-try {
-    // --- 4. Verificar si el email ya existe ---
-    $verificacion = $pdo->prepare('SELECT id_usuario FROM usuarios WHERE email = :email');
-    $verificacion->execute(['email' => $datos['email']]);
-    if ($verificacion->fetch()) {
+// Registrar los datos del formulario en Strapi.
+$body = array_filter([
+    'Nombre'             => $datos['nombre'],
+    'Apellido'           => $datos['apellido'],
+    'username'           => $datos['email'],
+    'email'              => $datos['email'],
+    'password'           => $datos['clave'],
+    'Telefono'           => $telefono,
+    'Provincia'          => $provincia,
+    'Ciudad'             => $ciudad,
+    'Direccion'          => $direccion,
+    'Auto_marca'         => $autoMarca,
+    'Auto_modelo'        => $autoModelo,
+    'Auto_anio'          => $autoAnio,
+    'Frecuencia_compra'  => $frecuenciaCompraStrapi,
+    'Acepta_descuentos'  => $aceptaDescuentos,
+    'Acepta_promociones' => $aceptaPromociones,
+], fn($valor) => $valor !== null);
+
+$resultado = strapiRequest('POST', 'auth/local/register', [], $body);
+
+if (!$resultado['ok']) {
+    $mensaje = $resultado['error'] ?? '';
+    if (stripos($mensaje, 'email') !== false || stripos($mensaje, 'taken') !== false) {
         header('Location: ' . BASE_URL . '/src/views/auth/register.php?error=email');
         exit;
     }
-
-    // --- 5. Hashear la contraseña con BCRYPT ---
-    $claveHasheada = password_hash($datos['clave'], PASSWORD_DEFAULT);
-
-    // --- 6. Guardar en la Base de Datos ---
-    $sentencia = $pdo->prepare('
-        INSERT INTO usuarios
-            (nombre, apellido, email, clave, telefono, provincia, ciudad, direccion, auto_marca, auto_modelo, auto_anio,
-             frecuencia_compra, acepta_descuentos, acepta_promociones)
-        VALUES
-            (:nombre, :apellido, :email, :clave, :telefono, :provincia, :ciudad, :direccion, :auto_marca, :auto_modelo, :auto_anio,
-             :frecuencia_compra, :acepta_descuentos, :acepta_promociones)
-    ');
-
-    $sentencia->execute([
-        'nombre'             => $datos['nombre'],
-        'apellido'           => $datos['apellido'],
-        'email'              => $datos['email'],
-        'clave'              => $claveHasheada,
-        'telefono'           => $telefono,
-        'provincia'          => $provincia,
-        'ciudad'             => $ciudad,
-        'direccion'          => $direccion,
-        'auto_marca'         => $autoMarca,
-        'auto_modelo'        => $autoModelo,
-        'auto_anio'          => $autoAnio,
-        'frecuencia_compra'  => $frecuenciaCompra,
-        'acepta_descuentos'  => $aceptaDescuentos,
-        'acepta_promociones' => $aceptaPromociones,
-    ]);
-
-    $nuevoId = $pdo->lastInsertId();
-
-    // --- 7. Guardar Datos de Sesión ---
-    $_SESSION['usuario_id'] = $nuevoId;
-    $_SESSION['nombre']     = $datos['nombre'];
-    $_SESSION['usuario']    = [
-        'id_usuario' => $nuevoId,
-        'nombre'     => $datos['nombre'],
-        'apellido'   => $datos['apellido'],
-        'email'      => $datos['email'],
-    ];
-
-    // Redirigir al inicio logueado
-    header('Location: ' . BASE_URL . '/index.php');
+    header('Location: ' . BASE_URL . '/src/views/auth/register.php?error=1');
     exit;
-
-} catch (PDOException $e) {
-    die("Error en la Base de Datos: " . $e->getMessage());
 }
+
+$jwt  = $resultado['data']['jwt'] ?? null;
+$user = $resultado['data']['user'] ?? null;
+
+if (!$jwt || !$user) {
+    header('Location: ' . BASE_URL . '/src/views/auth/register.php?error=1');
+    exit;
+}
+
+require_once __DIR__ . '/../../config/usuario_session.php';
+guardarSesionUsuario($user, $jwt);
+
+// --- 6. Redirección Exitosa ---
+header('Location: ' . BASE_URL . '/index.php');
+exit;

@@ -1,11 +1,23 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../config/rutas.php';
+require_once __DIR__ . '/../controllers/auth/carrito_controller.php'; // en tu proyecto: carrito.php
+
+// Antes había un id_usuario=2 "temporal". Ahora se exige login real.
+if (empty($_SESSION['usuario']['id']) || empty($_SESSION['usuario']['jwt'])) {
+    header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+    exit;
+}
+
+$idUsuario = (int) $_SESSION['usuario']['id'];
+$jwt       = $_SESSION['usuario']['jwt'];
+
 require_once __DIR__ . '/_layouts/header.php';
-require_once __DIR__ . '/../controllers/auth/carrito.php';
 
-$id_usuario = 2; // temporal
-
-$resultado = obtenerProductosDelCarrito($pdo, $id_usuario);
+$resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
 
 $productos = $resultado['productos'] ?? [];
 $total = (float) ($resultado['total'] ?? 0);
@@ -77,9 +89,10 @@ foreach ($productos as $producto) {
 
         <!-- IMAGEN DEL PRODUCTO -->
         <div class="cart-product-image">
-            <?php if (!empty($producto['imagen'])): ?>
+            <?php $imagenProducto = $producto['imagenes'][0] ?? null; ?>
+            <?php if ($imagenProducto): ?>
                 <img
-                    src="<?= htmlspecialchars($producto['imagen']) ?>"
+                    src="<?= htmlspecialchars($imagenProducto) ?>"
                     alt="<?= htmlspecialchars($producto['nombre']) ?>"
                 >
             <?php else: ?>
@@ -174,7 +187,7 @@ foreach ($productos as $producto) {
                     </span>
 
                     <span class="text-white" id="cartSubtotal">
-                        $<?= number_format($resultado['total'], 2, ',', '.') ?>
+                        $<?= number_format($total, 2, ',', '.') ?>
                     </span>
 
                 </div>
@@ -205,7 +218,7 @@ foreach ($productos as $producto) {
                     </span>
 
                     <span class="fw-bold text-danger fs-5" id="cartTotal">
-                        $<?= number_format($resultado['total'], 2, ',', '.') ?>
+                        $<?= number_format($total, 2, ',', '.') ?>
                     </span>
 
                 </div>

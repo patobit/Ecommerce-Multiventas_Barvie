@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
+require_once __DIR__ . '/../../config/strapi_client.php';
 
 // Asegurar que la sesión esté iniciada
 if (session_status() === PHP_SESSION_NONE) {
@@ -23,35 +24,33 @@ if ($email === '' || $password === '') {
     exit;
 }
 
-// Paso clave #3: Buscar usuario por Email y verificar contraseña -
-try {
-    $stmt = $pdo->prepare('SELECT id_usuario, nombre, apellido, email, clave FROM usuarios WHERE email = :email');
-    $stmt->execute(['email' => $email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+// Paso clave #3: Autenticar contra Strapi (Users & Permissions) -
+// Strapi acepta 'identifier' como email O username; acá siempre mandamos
+// el email. Antes esto buscaba en una tabla local `usuarios` con PDO.
+$resultado = strapiRequest('POST', 'auth/local', [], [
+    'identifier' => $email,
+    'password'   => $password,
+]);
 
-    // Verificamos si existe el usuario y comprobamos el hash de la contraseña
-    if (!$user || !password_verify($password, $user['clave'])) {
-        $_SESSION['error_login'] = 'Email o contraseña incorrectos.';
-        header('Location: ' . BASE_URL . '/src/views/auth/login.php');
-        exit;
-    }
-
-    // Paso clave #4: Cargar datos del usuario en la Sesión --------
-    $_SESSION['usuario_id'] = $user['id_usuario'];
-    $_SESSION['nombre']     = $user['nombre'];
-    $_SESSION['usuario']    = [
-        'id_usuario' => $user['id_usuario'],
-        'nombre'     => $user['nombre'],
-        'apellido'   => $user['apellido'],
-        'email'      => $user['email'],
-    ];
-
-    // Redirigir al inicio logueado
-    header('Location: ' . BASE_URL . '/index.php');
-    exit;
-
-} catch (PDOException $e) {
-    $_SESSION['error_login'] = 'Error al iniciar sesión. Intentá de nuevo.';
-    header('Location: ' . BASE_URL . '/src/views/auth/login.php');
-    exit;
+if (!$resultado['ok']) {
+  // Strapi devuelve el mismo error genérico tanto si el email no existe
+  // como si la contraseña está mal, así que no hace falta distinguir acá.
+  $_SESSION['error_login'] = 'Email o contraseña incorrectos.';
+  header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+  exit;
 }
+
+$jwt  = $resultado['data']['jwt'] ?? null;
+$user = $resultado['data']['user'] ?? null;
+
+if (!$jwt || !$user) {
+  $_SESSION['error_login'] = 'Error al iniciar sesión. Intentá de nuevo.';
+  header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+  exit;
+}
+
+require_once __DIR__ . '/../../config/usuario_session.php';
+guardarSesionUsuario($user, $jwt);
+
+header('Location: ' . BASE_URL . '/index.php');
+exit;
