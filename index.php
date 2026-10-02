@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/src/config/rutas.php';                     // Define BASE_URL
-require_once __DIR__ . '/src/config/database.php';                  // Define $pdo (todavía lo usan carrito/checkout/login)
+require_once __DIR__ . '/src/config/database.php';
 require_once __DIR__ . '/src/controllers/auth/productos_controller.php'; // Consultas a Strapi
 require_once __DIR__ . '/src/views/productos_card.php';              // renderProductCard()
 

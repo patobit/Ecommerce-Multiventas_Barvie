@@ -297,5 +297,7 @@ $vehiculosUsuario = $vehiculosUsuario ?? [
         }
     </script>
 <?php require_once __DIR__ . '/../_layouts/chatbot.php'; ?>
+<script>window.BASE_URL = <?= json_encode(BASE_URL) ?>;</script>
+<script src="<?= BASE_URL ?>/assets/js/app.js" defer></script>
 </body>
 </html>

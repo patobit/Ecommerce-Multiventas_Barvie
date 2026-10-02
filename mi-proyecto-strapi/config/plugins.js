@@ -24,7 +24,9 @@ const deniedTypes = [
 module.exports = () => ({
   'users-permissions': {
     config: {
-      jwtManagement: 'refresh',
+      jwtManagement: 'legacy-support',
+      jwt: { expiresIn: '1d' },
+      register: { allowedFields: ['Nombre', 'Apellido', 'Telefono', 'Provincia', 'Ciudad', 'Direccion', 'Auto_marca', 'Auto_modelo', 'Auto_anio', 'Frecuencia_compra', 'Acepta_descuentos', 'Acepta_promociones'] },
       sessions: {
         httpOnly: true,
       },

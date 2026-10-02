@@ -50,6 +50,10 @@
       "relation": "oneToMany",
       "target": "api::detalle-carrito.detalle-carrito",
       "mappedBy": "producto"
+    },
+    "Precio_oferta": {
+      "type": "decimal",
+      "min": 0
     }
   }
 }

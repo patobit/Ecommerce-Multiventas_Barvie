@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/rutas.php';                     // define BASE_URL
-require_once __DIR__ . '/../config/database.php';                  // define $pdo (todavía lo usan carrito/checkout/login)
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../controllers/auth/productos_controller.php'; // consultas a Strapi
 require_once __DIR__ . '/productos_card.php';                       // renderProductCard()
 

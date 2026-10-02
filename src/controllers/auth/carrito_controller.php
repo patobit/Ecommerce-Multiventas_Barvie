@@ -1,11 +1,16 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+set_exception_handler(function (Throwable $e) {
+    error_log($e->getMessage());
+    http_response_code(502);
+    echo json_encode(['success' => false, 'message' => 'No se pudo completar la operación con Strapi. Intentá de nuevo.']);
+});
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/carrito_controller.php'; // en tu proyecto: carrito.php (ver nota de nombres al final)
+require_once __DIR__ . '/carrito.php';
 
 // Antes había un id_usuario=2 "temporal". Ahora que el login existe de
 // verdad, usamos el usuario logueado en la sesión.

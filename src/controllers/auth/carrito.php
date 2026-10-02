@@ -2,27 +2,7 @@
 // =============================================================================
 // LÓGICA DEL CARRITO (API REST de Strapi)
 // =============================================================================
-// SUPUESTOS DE NOMBRES DE CAMPO (a confirmar si algo falla):
-// Siguiendo el patrón visto en categoria/producto/detalle-compra (atributos
-// con mayúscula inicial: Nombre, Precio, Cantidad, Precio_unitario), se
-// asume que:
-//   - carrito         tiene el campo "Estado" (string: 'Activo' / 'Finalizado')
-//   - compra          tiene los campos "Fecha" (datetime) y "Total" (decimal)
-//   - detalle-carrito tiene el campo "Cantidad" (integer)
-// Los nombres de las RELACIONES sí están confirmados (vienen del schema.json
-// de "user" que ya compartiste): la relación de carrito/compra hacia el
-// usuario se llama "users_permissions_user". Las relaciones "carrito",
-// "producto" y "compra" dentro de detalle-carrito/detalle-compra siguen el
-// mismo patrón lowercase que ya confirmamos en producto->categoria.
-//
-// Si alguna de estas rutas te tira 400 "Invalid key ...", mandame el
-// schema.json de carrito/compra/detalle-carrito y te corrijo el nombre exacto.
-//
-// PERMISOS NECESARIOS EN STRAPI: a diferencia de Producto/Categoria (que son
-// públicos), estas rutas requieren estar logueado. En el panel de Strapi:
-// Settings > Users & Permissions > Roles > Authenticated, hay que habilitar
-// find/findOne/create/update/delete para Carrito, DetalleCarrito, Compra y
-// DetalleCompra.
+// Los IDs de las vistas siguen siendo numéricos; las escrituras REST usan documentId.
 
 require_once __DIR__ . '/../../config/strapi_client.php';
 require_once __DIR__ . '/productos_controller.php'; // reutiliza mapearImagenes()
@@ -39,10 +19,13 @@ function obtenerCarritoActivoRaw(string $jwt, int $idUsuario): ?array
             'users_permissions_user' => ['id' => ['$eq' => $idUsuario]],
             'Estado'                 => ['$eq' => 'Activo'],
         ],
-        'populate'   => ['detalle_carritos' => ['populate' => ['producto' => ['populate' => ['categoria']]]]],
+        'populate'   => ['detalle_carritos' => ['populate' => ['producto' => ['populate' => ['categoria', 'Imagen']]]]],
         'pagination' => ['limit' => 1],
     ], null, $jwt);
 
+    if (!$resultado['ok']) {
+        throw new RuntimeException('No se pudo consultar el carrito. Intentá de nuevo.');
+    }
     $items = $resultado['data']['data'] ?? [];
     return empty($items) ? null : $items[0];
 }
@@ -51,7 +34,7 @@ function obtenerCarritoActivoRaw(string $jwt, int $idUsuario): ?array
  * Crea un carrito nuevo en estado 'Activo' para el usuario. Devuelve el id
  * del carrito recién creado, o null si falló.
  */
-function crearCarritoActivo(string $jwt, int $idUsuario): ?int
+function crearCarritoActivo(string $jwt, int $idUsuario): ?string
 {
     $resultado = strapiRequest('POST', 'carritos', [], [
         'data' => [
@@ -60,7 +43,7 @@ function crearCarritoActivo(string $jwt, int $idUsuario): ?int
         ],
     ], $jwt);
 
-    return $resultado['ok'] ? ($resultado['data']['data']['id'] ?? null) : null;
+    return $resultado['ok'] ? ($resultado['data']['data']['documentId'] ?? null) : null;
 }
 
 /**
@@ -85,13 +68,17 @@ function obtenerProductosDelCarrito(string $jwt, int $idUsuario): array
             continue; // el producto fue borrado pero el detalle quedó huérfano
         }
 
-        $precio    = (float) ($producto['Precio'] ?? 0);
+        $precio = (float) ($producto['Precio'] ?? 0);
+        $oferta = (float) ($producto['Precio_oferta'] ?? 0);
+        if ($oferta > 0 && $oferta < $precio) $precio = $oferta;
         $cantidad  = (int) ($detalle['Cantidad'] ?? 0);
         $subtotal  = $precio * $cantidad;
         $total    += $subtotal;
 
         $productos[] = [
             'id_detalle_carrito' => $detalle['id'],
+            'document_id' => $detalle['documentId'],
+            'producto_document_id' => $producto['documentId'],
             'id_producto'        => $producto['id'],
             'nombre'             => $producto['Nombre'] ?? '',
             'descripcion'        => $producto['Descripcion'] ?? '',
@@ -105,7 +92,7 @@ function obtenerProductosDelCarrito(string $jwt, int $idUsuario): array
 
     return [
         'success'    => true,
-        'id_carrito' => $carrito['id'],
+        'id_carrito' => $carrito['documentId'],
         'productos'  => $productos,
         'total'      => $total,
     ];
@@ -117,8 +104,12 @@ function obtenerProductosDelCarrito(string $jwt, int $idUsuario): array
  */
 function agregarProductoAlCarrito(string $jwt, int $idUsuario, int $idProducto, int $cantidad): array
 {
+    $producto = obtenerProductoPorId($idProducto);
+    if (!$producto || $cantidad <= 0 || $cantidad > $producto['stock']) {
+        return ['success' => false, 'message' => 'Cantidad o producto inválido; revisá el stock.'];
+    }
     $carrito = obtenerCarritoActivoRaw($jwt, $idUsuario);
-    $idCarrito = $carrito['id'] ?? crearCarritoActivo($jwt, $idUsuario);
+    $idCarrito = $carrito['documentId'] ?? crearCarritoActivo($jwt, $idUsuario);
 
     if (!$idCarrito) {
         return ['success' => false, 'message' => 'No se pudo crear el carrito.'];
@@ -135,7 +126,8 @@ function agregarProductoAlCarrito(string $jwt, int $idUsuario, int $idProducto, 
 
     if ($detalleExistente) {
         $nuevaCantidad = (int) ($detalleExistente['Cantidad'] ?? 0) + $cantidad;
-        $resultado = strapiRequest('PUT', 'detalle-carritos/' . $detalleExistente['id'], [], [
+        if ($nuevaCantidad > $producto['stock']) return ['success' => false, 'message' => 'Stock insuficiente.'];
+        $resultado = strapiRequest('PUT', 'detalle-carritos/' . $detalleExistente['documentId'], [], [
             'data' => ['Cantidad' => $nuevaCantidad],
         ], $jwt);
     } else {
@@ -143,7 +135,7 @@ function agregarProductoAlCarrito(string $jwt, int $idUsuario, int $idProducto, 
             'data' => [
                 'Cantidad' => $cantidad,
                 'carrito'  => $idCarrito,
-                'producto' => $idProducto,
+                'producto' => $producto['document_id'],
             ],
         ], $jwt);
     }
@@ -162,11 +154,15 @@ function agregarProductoAlCarrito(string $jwt, int $idUsuario, int $idProducto, 
  */
 function actualizarCantidadEnCarrito(string $jwt, int $idUsuario, int $idDetalleCarrito, int $cantidad): array
 {
-    if (!detalleCarritoPerteneceAlUsuario($jwt, $idUsuario, $idDetalleCarrito)) {
+    $detalle = obtenerDetallePropio($jwt, $idUsuario, $idDetalleCarrito);
+    if (!$detalle) {
         return ['success' => false, 'message' => 'El producto no pertenece a tu carrito.'];
     }
 
-    $resultado = strapiRequest('PUT', 'detalle-carritos/' . $idDetalleCarrito, [], [
+    if ($cantidad <= 0 || $cantidad > (int) ($detalle['producto']['Stock'] ?? 0)) {
+        return ['success' => false, 'message' => 'Cantidad inválida o stock insuficiente.'];
+    }
+    $resultado = strapiRequest('PUT', 'detalle-carritos/' . $detalle['documentId'], [], [
         'data' => ['Cantidad' => $cantidad],
     ], $jwt);
 
@@ -182,11 +178,12 @@ function actualizarCantidadEnCarrito(string $jwt, int $idUsuario, int $idDetalle
  */
 function eliminarProductoDelCarrito(string $jwt, int $idUsuario, int $idDetalleCarrito): array
 {
-    if (!detalleCarritoPerteneceAlUsuario($jwt, $idUsuario, $idDetalleCarrito)) {
+    $detalle = obtenerDetallePropio($jwt, $idUsuario, $idDetalleCarrito);
+    if (!$detalle) {
         return ['success' => false, 'message' => 'El producto no pertenece a tu carrito.'];
     }
 
-    $resultado = strapiRequest('DELETE', 'detalle-carritos/' . $idDetalleCarrito, [], null, $jwt);
+    $resultado = strapiRequest('DELETE', 'detalle-carritos/' . $detalle['documentId'], [], null, $jwt);
 
     if (!$resultado['ok']) {
         return ['success' => false, 'message' => 'Error al eliminar: ' . ($resultado['error'] ?? '')];
@@ -199,22 +196,13 @@ function eliminarProductoDelCarrito(string $jwt, int $idUsuario, int $idDetalleC
  * Verifica que un detalle_carrito exista, esté en un carrito 'Activo' y ese
  * carrito sea del usuario dado.
  */
-function detalleCarritoPerteneceAlUsuario(string $jwt, int $idUsuario, int $idDetalleCarrito): bool
+function obtenerDetallePropio(string $jwt, int $idUsuario, int $idDetalleCarrito): ?array
 {
-    $resultado = strapiRequest('GET', 'detalle-carritos/' . $idDetalleCarrito, [
-        'populate' => ['carrito' => ['populate' => ['users_permissions_user']]],
-    ], null, $jwt);
-
-    if (!$resultado['ok']) {
-        return false;
+    $carrito = obtenerCarritoActivoRaw($jwt, $idUsuario);
+    foreach ($carrito['detalle_carritos'] ?? [] as $detalle) {
+        if ((int) $detalle['id'] === $idDetalleCarrito) return $detalle;
     }
-
-    $carrito = $resultado['data']['data']['carrito'] ?? null;
-    if (!$carrito || ($carrito['Estado'] ?? null) !== 'Activo') {
-        return false;
-    }
-
-    return ($carrito['users_permissions_user']['id'] ?? null) === $idUsuario;
+    return null;
 }
 
 /**
@@ -245,28 +233,28 @@ function finalizarCompra(string $jwt, int $idUsuario): array
     if (!$compraResultado['ok']) {
         return ['success' => false, 'message' => 'Error al crear la compra: ' . ($compraResultado['error'] ?? '')];
     }
-    $idCompra = $compraResultado['data']['data']['id'];
+    $idCompra = $compraResultado['data']['data']['documentId'];
 
     // 2. Copiar cada línea del carrito a detalle-compras
     foreach ($productos as $producto) {
-        strapiRequest('POST', 'detalle-compras', [], [
+        $linea = strapiRequest('POST', 'detalle-compras', [], [
             'data' => [
                 'Cantidad'        => $producto['cantidad'],
                 'Precio_unitario' => $producto['precio'],
                 'compra'          => $idCompra,
-                'producto'        => $producto['id_producto'],
+                'producto'        => $producto['producto_document_id'],
             ],
         ], $jwt);
+        if (!$linea['ok']) {
+            return ['success' => false, 'message' => 'No se pudo completar la compra. Contactá a la tienda antes de reintentar.'];
+        }
     }
 
-    // 3. Vaciar el carrito (borrar sus detalle_carritos) y cerrarlo
-    foreach ($productos as $producto) {
-        strapiRequest('DELETE', 'detalle-carritos/' . $producto['id_detalle_carrito'], [], null, $jwt);
-    }
-
-    strapiRequest('PUT', 'carritos/' . $idCarrito, [], [
-        'data' => ['Estado' => 'Finalizado', 'compra' => $idCompra],
+    // Cerrar el carrito conservando sus líneas como historial.
+    $cierre = strapiRequest('PUT', 'carritos/' . $idCarrito, [], [
+        'data' => ['Estado' => 'Convertido', 'compra' => $idCompra],
     ], $jwt);
 
+    if (!$cierre['ok']) return ['success' => false, 'message' => 'No se pudo cerrar la compra. Contactá a la tienda.'];
     return ['success' => true, 'message' => '¡Compra realizada con éxito!', 'id_compra' => $idCompra];
 }

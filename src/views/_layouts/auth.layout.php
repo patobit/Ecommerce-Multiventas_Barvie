@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/rutas.php';     // BASE_URL
-require_once __DIR__ . '/../../config/bootstrap.php'; // sesión + $pdo
+require_once __DIR__ . '/../../config/bootstrap.php'; // sesión + configuración de Strapi
 
 if (isset($_SESSION['usuario'])) {
     header('Location: ' . BASE_URL . '/index.php');

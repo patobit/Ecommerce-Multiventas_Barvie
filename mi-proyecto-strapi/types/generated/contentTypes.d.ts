@@ -451,7 +451,7 @@ export interface ApiCarritoCarrito extends Struct.CollectionTypeSchema {
     singularName: 'carrito';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     compra: Schema.Attribute.Relation<'oneToOne', 'api::compra.compra'>;
@@ -529,7 +529,7 @@ export interface ApiCompraCompra extends Struct.CollectionTypeSchema {
     singularName: 'compra';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -567,7 +567,7 @@ export interface ApiDetalleCarritoDetalleCarrito
     singularName: 'detalle-carrito';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     Cantidad: Schema.Attribute.Integer;
@@ -598,7 +598,7 @@ export interface ApiDetalleCompraDetalleCompra
     singularName: 'detalle-compra';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     Cantidad: Schema.Attribute.Integer;
@@ -629,7 +629,7 @@ export interface ApiEnvioEnvio extends Struct.CollectionTypeSchema {
     singularName: 'envio';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     compra: Schema.Attribute.Relation<'oneToOne', 'api::compra.compra'>;
@@ -688,6 +688,13 @@ export interface ApiProductoProducto extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     Nombre: Schema.Attribute.String;
     Precio: Schema.Attribute.Decimal;
+    Precio_oferta: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     publishedAt: Schema.Attribute.DateTime;
     Stock: Schema.Attribute.Integer;
     updatedAt: Schema.Attribute.DateTime;
@@ -1156,6 +1163,7 @@ export interface PluginUsersPermissionsUser
   attributes: {
     Acepta_descuentos: Schema.Attribute.Boolean;
     Acepta_promociones: Schema.Attribute.Boolean;
+    Apellido: Schema.Attribute.String;
     Auto_anio: Schema.Attribute.Integer;
     Auto_marca: Schema.Attribute.String;
     Auto_modelo: Schema.Attribute.String;
@@ -1183,6 +1191,7 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
+    Nombre: Schema.Attribute.String;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{

@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/rutas.php';
 ?>
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/chatbot.css">
 <div id="mv-chat" data-endpoint="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/src/controllers/chatbot.php">
     <button class="mv-chat-toggle" type="button" aria-expanded="false" aria-controls="mv-chat-panel">¿Necesitás ayuda?</button>
     <section id="mv-chat-panel" aria-label="Asistente de Multiventas Barvie" hidden>
@@ -22,4 +21,3 @@ require_once __DIR__ . '/../../config/rutas.php';
         </form>
     </section>
 </div>
-<script src="<?= BASE_URL ?>/assets/js/chatbot.js" defer></script>

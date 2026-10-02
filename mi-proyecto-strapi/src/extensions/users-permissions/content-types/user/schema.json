@@ -112,6 +112,12 @@
     },
     "Acepta_promociones": {
       "type": "boolean"
+    },
+    "Nombre": {
+      "type": "string"
+    },
+    "Apellido": {
+      "type": "string"
     }
   }
 }

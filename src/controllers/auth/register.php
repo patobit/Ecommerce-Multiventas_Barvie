@@ -98,7 +98,6 @@ if (!$jwt || !$user) {
     exit;
 }
 
-require_once __DIR__ . '/../../config/usuario_session.php';
 guardarSesionUsuario($user, $jwt);
 
 // --- 6. Redirección Exitosa ---

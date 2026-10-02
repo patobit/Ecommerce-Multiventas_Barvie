@@ -1,5 +1,6 @@
 <?php
-// CONEXIÓN A LA BASE DE DATOS (PDO) — credenciales leídas desde el .env
+// Configuración compartida de la tienda, conservando el nombre del repositorio.
+// Carga .env; el acceso a productos y cuentas se realiza mediante Strapi.
 
 
 /**
@@ -39,29 +40,4 @@ function cargarEnv(string $rutaArchivo): void
 // así que hay que subir dos niveles.
 cargarEnv(__DIR__ . '/../../.env');
 
-$DB_HOST = $_ENV['DB_HOST'] ?? 'localhost';
-$DB_NAME = $_ENV['DB_NAME'] ?? 'multiventas';
-$DB_USER = $_ENV['DB_USER'] ?? 'root';
-$DB_PASS = $_ENV['DB_PASSWORD'] ?? '';
-
-if (!isset($pdo)) {
-    try {
-        $pdo = new PDO(
-            "mysql:host={$DB_HOST};dbname={$DB_NAME};charset=utf8mb4",
-            $DB_USER,
-            $DB_PASS,
-            [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
-    } catch (PDOException $e) {
-        // En desarrollo mostramos el error para poder debuggear.
-        // Antes de entregar el proyecto, esto debería loguearse en vez de mostrarse.
-        die('<div style="font-family:sans-serif;padding:2rem;color:#b00">
-                <h2>Error de conexión a la base de datos</h2>
-                <p>' . htmlspecialchars($e->getMessage()) . '</p>
-                <p>Revisá los valores en tu archivo <code>.env</code> (raíz del proyecto) y que el servicio MySQL de Laragon esté encendido.</p>
-             </div>');
-    }
-}
+// strapi_client.php utiliza STRAPI_URL de este entorno para consultar la API.

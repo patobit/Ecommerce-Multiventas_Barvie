@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../_layouts/auth.layout.php';
-$error = $_GET['error'] ?? null;
+$error = $_SESSION['error_login'] ?? ($_GET['error'] ?? null);
+unset($_SESSION['error_login']);
 ?>
 
 <div class="text-center mb-4">

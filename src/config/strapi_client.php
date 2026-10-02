@@ -6,8 +6,10 @@
 // carrito_controller.php y checkout_controller.php. Centralizarlo acá evita
 // tener 6 copias del mismo curl_init() repartidas por el proyecto.
 
+require_once __DIR__ . '/database.php';
+
 if (!defined('STRAPI_URL')) {
-    define('STRAPI_URL', 'http://localhost:1337'); // Sin barra al final
+    define('STRAPI_URL', rtrim(getenv('STRAPI_URL') ?: 'http://localhost:1337', '/')); // Sin barra al final
 }
 
 /**
@@ -62,11 +64,14 @@ function strapiRequest(string $method, string $endpoint, array $query = [], ?arr
 
     $decoded = json_decode($response, true);
 
-    if ($httpCode >= 400) {
+    if ($httpCode < 200 || $httpCode >= 300) {
         $mensajeError = $decoded['error']['message'] ?? "Error HTTP $httpCode";
-        error_log("strapiRequest: Strapi devolvió HTTP $httpCode para $method $endpoint -> $response");
+        error_log("strapiRequest: Strapi devolvió HTTP $httpCode para $method $endpoint ");
         return ['ok' => false, 'status' => $httpCode, 'data' => $decoded, 'error' => $mensajeError];
     }
 
+    if ($httpCode !== 204 && !is_array($decoded)) {
+        return ['ok' => false, 'status' => $httpCode, 'data' => null, 'error' => 'Strapi devolvió una respuesta inválida.'];
+    }
     return ['ok' => true, 'status' => $httpCode, 'data' => is_array($decoded) ? $decoded : null, 'error' => null];
 }

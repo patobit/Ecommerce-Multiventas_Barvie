@@ -24,6 +24,7 @@ function mapearProducto(array $item): array
         'descripcion'      => $item['Descripcion'] ?? '',
         'stock'            => $item['Stock'] ?? 0,
         'precio'           => $item['Precio'] ?? 0,
+        'precio_oferta'    => $item['Precio_oferta'] ?? null,
         'imagenes'         => mapearImagenes($item['Imagen'] ?? null),
         'id_categoria'     => $categoria['id'] ?? null,
         'categoria_nombre' => $categoria['Nombre'] ?? null,
@@ -132,13 +133,16 @@ function obtenerProductoMasVendido(): array
     return [$productoMapeado];
 }
 
-/**
- * PENDIENTE: "Producto" todavía no tiene un campo de precio de oferta en
- * Strapi. Devuelve [] hasta que se agregue (ej. "Precio_oferta", decimal).
- */
 function obtenerProductosOferta(int $limite = 4): array
 {
-    return [];
+    $resultado = strapiRequest('GET', 'productos', [
+        'filters' => ['Precio_oferta' => ['$gt' => 0]],
+        'populate' => ['categoria', 'Imagen'],
+        'sort' => 'id:desc',
+        'pagination' => ['limit' => max(1, $limite)],
+    ]);
+    return array_values(array_filter(array_map('mapearProducto', $resultado['data']['data'] ?? []),
+        fn($p) => (float) $p['precio_oferta'] < (float) $p['precio']));
 }
 
 function obtenerCategorias(?int $idPadre = null): array

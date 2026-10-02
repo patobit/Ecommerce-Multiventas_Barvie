@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../config/rutas.php';
-require_once __DIR__ . '/../controllers/auth/carrito_controller.php'; // en tu proyecto: carrito.php
+require_once __DIR__ . '/../controllers/auth/carrito.php';
 
 // Antes había un id_usuario=2 "temporal". Ahora se exige login real.
 if (empty($_SESSION['usuario']['id']) || empty($_SESSION['usuario']['jwt'])) {
@@ -17,7 +17,13 @@ $jwt       = $_SESSION['usuario']['jwt'];
 
 require_once __DIR__ . '/_layouts/header.php';
 
-$resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
+try {
+    $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
+} catch (RuntimeException $e) {
+    echo '<div class="container alert alert-warning">No se pudo consultar el carrito. Intentá de nuevo.</div>';
+    require_once __DIR__ . '/_layouts/footer.php';
+    exit;
+}
 
 $productos = $resultado['productos'] ?? [];
 $total = (float) ($resultado['total'] ?? 0);

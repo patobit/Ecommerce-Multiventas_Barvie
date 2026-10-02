@@ -16,6 +16,21 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
  
-// Conexión a la base de datos, disponible en todo el proyecto como $pdo
+// Configuración compartida para consultar la API de Strapi.
 require_once __DIR__ . '/database.php';
+
+// Mantiene las claves de sesión utilizadas por las vistas y los controladores.
+function guardarSesionUsuario(array $user, string $jwt): void
+{
+    session_regenerate_id(true);
+    $nombre = $user['Nombre'] ?? $user['username'] ?? '';
+    $_SESSION['usuario_id'] = $user['id'];
+    $_SESSION['nombre'] = $nombre;
+    $_SESSION['usuario'] = [
+        'id' => $user['id'], 'id_usuario' => $user['id'],
+        'name' => $nombre, 'nombre' => $nombre,
+        'apellido' => $user['Apellido'] ?? '', 'email' => $user['email'],
+        'jwt' => $jwt,
+    ];
+}
  
