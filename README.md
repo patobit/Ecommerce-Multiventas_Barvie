@@ -73,8 +73,18 @@ No subir `.env`, `mi-proyecto-strapi/.env`, `node_modules`, `build`, `.strapi`, 
 
 ## Funcionalidades pendientes
 
-- El formulario de perfil todavía no guarda modificaciones en Strapi.
+
 - Carrito y compras necesitan autorización por propietario y una operación de compra transaccional antes de habilitar sus permisos generales en la API.
 - El bloque de más vendidos consulta detalles de compra, cuya lectura pública no está habilitada.
 
 Estos pendientes de la aplicación son independientes de la instalación de Strapi y de la consolidación de archivos.
+
+## Perfiles guardados en Strapi
+
+El registro crea la cuenta en Strapi. El perfil consulta los datos actuales mediante GET /api/profile y guarda los cambios mediante PUT /api/profile al salir de un campo o pulsar Guardar cambios. Incluye nombre, apellido, email, teléfono, varias direcciones y vehículos. La pantalla informa si se guardó o si hubo un error.
+
+La extensión src/extensions/users-permissions/strapi-server.js, dentro de mi-proyecto-strapi, limita la operación al usuario autenticado por su JWT. No acepta cambiar el propietario, contraseña ni rol. PHP valida un token de formulario que cambia al iniciar sesión para impedir que una pestaña de otra cuenta sobrescriba datos.
+
+Después de descargar estos cambios, reiniciar Strapi para cargar la extensión y los campos JSON Direcciones y Vehiculos. No eliminar ni importar nuevamente la base. Los campos anteriores de dirección y vehículo se siguen leyendo y sincronizando. No es necesario habilitar permisos generales de edición de usuarios.
+
+Comprobado con cuentas temporales: registro, guardado, múltiples direcciones, vehículos, persistencia después de volver a ingresar, cambio de cuenta, rechazo de email duplicado y de formularios de una sesión anterior. Las cuentas de prueba fueron eliminadas.

@@ -1,26 +1,74 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
-
-// El perfil siempre pertenece al usuario autenticado de esta sesión.
+require_once __DIR__ . '/../../config/strapi_client.php';
 header('Cache-Control: no-store, private');
 $usuario = $_SESSION['usuario'] ?? null;
 if (!is_array($usuario) || empty($usuario['id']) || empty($usuario['jwt'])) {
     header('Location: ' . BASE_URL . '/src/views/auth/login.php');
     exit;
 }
-
+$jwt = $usuario['jwt'];
+$_SESSION['perfil_csrf'] ??= bin2hex(random_bytes(32));
+$errorPerfil = '';
+$guardado = false;
+$esPost = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
+if ($esPost) {
+    if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['perfil_csrf'], $_POST['csrf'])) {
+        $resultado = ['ok' => false, 'status' => 403, 'error' => 'La sesión del formulario cambió. Recargá la página.'];
+    } else {
+        $body = [
+            'Nombre' => $_POST['nombre'] ?? '', 'Apellido' => $_POST['apellido'] ?? '',
+            'email' => $_POST['email'] ?? '', 'Telefono' => $_POST['telefono'] ?? '',
+            'Direcciones' => is_array($_POST['direcciones'] ?? []) ? array_values($_POST['direcciones'] ?? []) : null,
+            'Vehiculos' => is_array($_POST['vehiculos'] ?? []) ? array_values($_POST['vehiculos'] ?? []) : null,
+        ];
+        $resultado = strapiRequest('PUT', 'profile', [], $body, $jwt);
+    }
+} else {
+    $resultado = strapiRequest('GET', 'profile', [], null, $jwt);
+}
+if ($resultado['ok']) {
+    $cuenta = $resultado['data'];
+    // Refresca las claves compartidas sin cambiar la sesión durante cada autoguardado.
+    $_SESSION['nombre'] = $cuenta['Nombre'] ?: $cuenta['username'];
+    $_SESSION['usuario'] = array_merge($usuario, [
+        'nombre' => $_SESSION['nombre'], 'name' => $_SESSION['nombre'],
+        'apellido' => $cuenta['Apellido'] ?? '', 'email' => $cuenta['email'],
+        'telefono' => $cuenta['Telefono'] ?? '',
+    ]);
+    $guardado = $esPost;
+} else {
+    $errorPerfil = $resultado['error'] ?? 'No se pudieron cargar los datos.';
+    $cuenta = [];
+}
+if ($esPost && str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
+    http_response_code($resultado['ok'] ? 200 : ($resultado['status'] ?: 503));
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => $resultado['ok'], 'error' => $errorPerfil]);
+    exit;
+}
+if (!$resultado['ok'] && $resultado['status'] === 401) {
+    unset($_SESSION['usuario'], $_SESSION['usuario_id'], $_SESSION['nombre']);
+    header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+    exit;
+}
+if ($guardado) {
+    header('Location: ' . BASE_URL . '/src/views/user/profile.php?guardado=1');
+    exit;
+}
 $userData = [
-    'nombre' => $usuario['nombre'] ?? '',
-    'apellido' => $usuario['apellido'] ?? '',
-    'email' => $usuario['email'] ?? '',
-    'telefono' => $usuario['telefono'] ?? ''
+    'nombre' => $cuenta['Nombre'] ?? $cuenta['username'] ?? '', 'apellido' => $cuenta['Apellido'] ?? '',
+    'email' => $cuenta['email'] ?? '', 'telefono' => $cuenta['Telefono'] ?? '',
 ];
-
-// No mostrar direcciones ni vehículos de ejemplo como datos de la cuenta.
-$direccionesUsuario = [];
-$vehiculosUsuario = [];
+$direccionesUsuario = $cuenta['Direcciones'] ?? (empty($cuenta['Provincia']) && empty($cuenta['Ciudad']) && empty($cuenta['Direccion']) ? [] : [[
+    'provincia' => $cuenta['Provincia'] ?? '', 'ciudad' => $cuenta['Ciudad'] ?? '', 'direccion' => $cuenta['Direccion'] ?? '',
+]]);
+$vehiculosUsuario = $cuenta['Vehiculos'] ?? (empty($cuenta['Auto_marca']) && empty($cuenta['Auto_modelo']) && empty($cuenta['Auto_anio']) ? [] : [[
+    'marca' => $cuenta['Auto_marca'] ?? '', 'modelo' => $cuenta['Auto_modelo'] ?? '', 'anio' => $cuenta['Auto_anio'] ?? '',
+]]);
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -117,22 +165,27 @@ $vehiculosUsuario = [];
             </div>
 
             <!-- APUNTA AL ROUTER O SCRIPT PÚBLICO -->
-            <form action="<?php echo BASE_URL; ?>/index.php?action=updateProfile" method="POST" class="profile-form">
+            <?php if ($errorPerfil): ?><p role="alert"><?= htmlspecialchars($errorPerfil, ENT_QUOTES, 'UTF-8') ?> Recargá para volver a intentar.</p><?php endif; ?>
+            <p id="profile-save-status" role="status" aria-live="polite"><?= isset($_GET['guardado']) ? 'Guardado en tu cuenta.' : 'Los cambios se guardan automáticamente al salir de cada campo.' ?></p>
+            <a href="<?= BASE_URL ?>/index.php">Volver a la tienda</a>
+            <form action="<?php echo BASE_URL; ?>/src/views/user/profile.php" method="POST" class="profile-form">
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['perfil_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                <fieldset <?= $errorPerfil ? 'disabled' : '' ?> style="border:0;padding:0;margin:0;min-width:0">
                 
                 <!-- Pestaña 1: Datos Personales -->
                 <div id="personal" class="profile-tab-content active">
                     <div class="grid-compact">
                         <div class="form-group-compact">
                             <label for="nombre">Nombre</label>
-                            <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($userData['nombre']); ?>" class="form-control-compact">
+                            <input type="text" id="nombre" name="nombre" required maxlength="254" value="<?php echo htmlspecialchars($userData['nombre']); ?>" class="form-control-compact">
                         </div>
                         <div class="form-group-compact">
                             <label for="apellido">Apellido</label>
-                            <input type="text" id="apellido" name="apellido" value="<?php echo htmlspecialchars($userData['apellido']); ?>" class="form-control-compact">
+                            <input type="text" id="apellido" name="apellido" required maxlength="254" value="<?php echo htmlspecialchars($userData['apellido']); ?>" class="form-control-compact">
                         </div>
                         <div class="form-group-compact">
                             <label for="email">Email</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" class="form-control-compact">
+                            <input type="email" id="email" name="email" required maxlength="254" value="<?php echo htmlspecialchars($userData['email']); ?>" class="form-control-compact">
                         </div>
                         <div class="form-group-compact">
                             <label for="telefono">Teléfono</label>
@@ -153,15 +206,15 @@ $vehiculosUsuario = [];
                                 <div class="grid-compact">
                                     <div class="form-group-compact">
                                         <label>Provincia</label>
-                                        <input type="text" name="direcciones[<?php echo $i; ?>][provincia]" value="<?php echo htmlspecialchars($dir['provincia']); ?>" class="form-control-compact">
+                                        <input type="text" name="direcciones[<?php echo $i; ?>][provincia]" value="<?php echo htmlspecialchars((string)($dir['provincia'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                     <div class="form-group-compact">
                                         <label>Ciudad</label>
-                                        <input type="text" name="direcciones[<?php echo $i; ?>][ciudad]" value="<?php echo htmlspecialchars($dir['ciudad']); ?>" class="form-control-compact">
+                                        <input type="text" name="direcciones[<?php echo $i; ?>][ciudad]" value="<?php echo htmlspecialchars((string)($dir['ciudad'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                     <div class="form-group-compact" style="grid-column: span 2;">
                                         <label>Calle, Número, Piso/Depto</label>
-                                        <input type="text" name="direcciones[<?php echo $i; ?>][direccion]" value="<?php echo htmlspecialchars($dir['direccion']); ?>" class="form-control-compact">
+                                        <input type="text" name="direcciones[<?php echo $i; ?>][direccion]" value="<?php echo htmlspecialchars((string)($dir['direccion'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                 </div>
                             </div>
@@ -184,15 +237,15 @@ $vehiculosUsuario = [];
                                 <div class="grid-compact">
                                     <div class="form-group-compact">
                                         <label>Marca</label>
-                                        <input type="text" name="vehiculos[<?php echo $i; ?>][marca]" value="<?php echo htmlspecialchars($veh['marca']); ?>" class="form-control-compact">
+                                        <input type="text" name="vehiculos[<?php echo $i; ?>][marca]" value="<?php echo htmlspecialchars((string)($veh['marca'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                     <div class="form-group-compact">
                                         <label>Modelo</label>
-                                        <input type="text" name="vehiculos[<?php echo $i; ?>][modelo]" value="<?php echo htmlspecialchars($veh['modelo']); ?>" class="form-control-compact">
+                                        <input type="text" name="vehiculos[<?php echo $i; ?>][modelo]" value="<?php echo htmlspecialchars((string)($veh['modelo'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                     <div class="form-group-compact">
                                         <label>Año</label>
-                                        <input type="number" name="vehiculos[<?php echo $i; ?>][anio]" value="<?php echo htmlspecialchars($veh['anio']); ?>" class="form-control-compact">
+                                        <input type="number" name="vehiculos[<?php echo $i; ?>][anio]" value="<?php echo htmlspecialchars((string)($veh['anio'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" class="form-control-compact">
                                     </div>
                                 </div>
                             </div>
@@ -209,11 +262,51 @@ $vehiculosUsuario = [];
                     </button>
                 </div>
 
+            </fieldset>
             </form>
         </div>
     </div>
 
     <script>
+        const profileForm = document.querySelector('.profile-form');
+        const saveStatus = document.getElementById('profile-save-status');
+        let saving = false;
+        let pendingSave = false;
+        let dirty = false;
+        profileForm.addEventListener('input', () => {
+            dirty = true;
+            saveStatus.textContent = 'Cambios pendientes. Se guardarán al salir del campo.';
+        });
+        async function saveProfile() {
+            dirty = true;
+            if (!profileForm.reportValidity()) return;
+            if (saving) { pendingSave = true; return; }
+            saving = true;
+            pendingSave = false;
+            dirty = false;
+            saveStatus.textContent = 'Guardando…';
+            try {
+                const response = await fetch(profileForm.action, {
+                    method: 'POST', body: new FormData(profileForm),
+                    headers: { Accept: 'application/json' }, credentials: 'same-origin'
+                });
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || 'No se pudo guardar.');
+                saveStatus.textContent = dirty ? 'Hay cambios pendientes.' : 'Guardado en tu cuenta.';
+            } catch (error) {
+                dirty = true;
+                saveStatus.textContent = 'No guardado: ' + error.message + ' Podés reintentar con Guardar cambios.';
+            } finally {
+                saving = false;
+                if (pendingSave) saveProfile();
+            }
+        }
+        profileForm.addEventListener('change', saveProfile);
+        profileForm.addEventListener('submit', (event) => { event.preventDefault(); saveProfile(); });
+        window.addEventListener('beforeunload', (event) => {
+            if (dirty || saving) { event.preventDefault(); event.returnValue = ''; }
+        });
+
         function openTab(evt, tabName) {
             const contents = document.querySelectorAll('.profile-tab-content');
             contents.forEach(content => content.classList.remove('active'));
@@ -287,6 +380,7 @@ $vehiculosUsuario = [];
         function removeCard(btn) {
             const card = btn.closest('.card-item');
             card.remove();
+            saveProfile();
         }
     </script>
 <?php require_once __DIR__ . '/../_layouts/chatbot.php'; ?>
