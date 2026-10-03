@@ -1,32 +1,25 @@
 <?php
-if (!defined('BASE_URL')) {
-    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-    $pos = strpos($scriptName, '/src/');
+require_once __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../../config/rutas.php';
 
-    if ($pos !== false) {
-        $baseUrl = substr($scriptName, 0, $pos);
-    } else {
-        $baseUrl = rtrim(dirname($scriptName), '/\\');
-    }
-
-    define('BASE_URL', $baseUrl);
+// El perfil siempre pertenece al usuario autenticado de esta sesión.
+header('Cache-Control: no-store, private');
+$usuario = $_SESSION['usuario'] ?? null;
+if (!is_array($usuario) || empty($usuario['id']) || empty($usuario['jwt'])) {
+    header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+    exit;
 }
 
-// SIMULACIÓN DE DATOS DESDE BASE DE DATOS (Sustituir con consultas reales)
 $userData = [
-    'nombre' => $usuario['nombre'] ?? 'Uriel',
+    'nombre' => $usuario['nombre'] ?? '',
     'apellido' => $usuario['apellido'] ?? '',
     'email' => $usuario['email'] ?? '',
     'telefono' => $usuario['telefono'] ?? ''
 ];
 
-$direccionesUsuario = $direccionesUsuario ?? [
-    ['provincia' => 'Buenos Aires', 'ciudad' => 'Bosques', 'direccion' => 'Hilario ascasubi 1039']
-];
-
-$vehiculosUsuario = $vehiculosUsuario ?? [
-    ['marca' => 'Chevrolet', 'modelo' => 'Classic', 'anio' => '2014']
-];
+// No mostrar direcciones ni vehículos de ejemplo como datos de la cuenta.
+$direccionesUsuario = [];
+$vehiculosUsuario = [];
 ?>
 <!DOCTYPE html>
 <html lang="es">

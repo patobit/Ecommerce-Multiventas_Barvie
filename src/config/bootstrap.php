@@ -30,6 +30,7 @@ function guardarSesionUsuario(array $user, string $jwt): void
         'id' => $user['id'], 'id_usuario' => $user['id'],
         'name' => $nombre, 'nombre' => $nombre,
         'apellido' => $user['Apellido'] ?? '', 'email' => $user['email'],
+        'telefono' => $user['Telefono'] ?? '',
         'jwt' => $jwt,
     ];
 }
