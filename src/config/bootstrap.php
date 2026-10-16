@@ -22,7 +22,9 @@ require_once __DIR__ . '/database.php';
 // Mantiene las claves de sesión utilizadas por las vistas y los controladores.
 function guardarSesionUsuario(array $user, string $jwt): void
 {
-    session_regenerate_id(true);
+    session_regenerate_id(true);//GENERA UN ID NUEVO Y BORRA EL VIEJO
+
+    //TOMA EL NOMBRE Y GUARDA LOS DATOS DEL USUARIO EN SESSION
     $nombre = $user['Nombre'] ?? $user['username'] ?? '';
     $_SESSION['usuario_id'] = $user['id'];
     $_SESSION['nombre'] = $nombre;

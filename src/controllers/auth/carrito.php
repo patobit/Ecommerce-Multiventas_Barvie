@@ -24,7 +24,7 @@ function obtenerCarritoActivoRaw(string $jwt, int $idUsuario): ?array
     ], null, $jwt);
 
     if (!$resultado['ok']) {
-        throw new RuntimeException('No se pudo consultar el carrito. Intentá de nuevo.');
+        throw new RuntimeException('Strapi respondió HTTP ' . $resultado['status'] . ': ' . ($resultado['error'] ?? ''));
     }
     $items = $resultado['data']['data'] ?? [];
     return empty($items) ? null : $items[0];

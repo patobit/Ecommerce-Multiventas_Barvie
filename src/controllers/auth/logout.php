@@ -3,9 +3,9 @@ require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
 
 // Limpiar todas las variables de la sesión
-$_SESSION = [];
+$_SESSION = [];// VACIA TODAS LAS VARIABLES
 
-// Destruir la cookie de sesión en el navegador si existe
+//BORRA LAS COKIS DE SESION DEL NAVEGADOR
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(
@@ -19,7 +19,7 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Destruir la sesión en el servidor
+// ELIMINA la sesión en el servidor
 session_destroy();
 
 // Redirigir al inicio o a la vista de login

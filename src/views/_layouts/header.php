@@ -109,7 +109,7 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
             </div>
         </nav>
         
-        <?php if (basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>                               
+              <?php if (!in_array(basename($_SERVER['PHP_SELF']), ['carrito.php', 'compra_finalizada.php'])): ?>                         
         <!-- Hero Section -->
         <div class="container py-5">
             <div class="row align-items-center g-5">

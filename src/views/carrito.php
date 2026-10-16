@@ -20,7 +20,7 @@ require_once __DIR__ . '/_layouts/header.php';
 try {
     $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
 } catch (RuntimeException $e) {
-    echo '<div class="container alert alert-warning">No se pudo consultar el carrito. Intentá de nuevo.</div>';
+    echo '<div class="container alert alert-warning">' . htmlspecialchars($e->getMessage()) . '</div>';
     require_once __DIR__ . '/_layouts/footer.php';
     exit;
 }
@@ -156,8 +156,8 @@ foreach ($productos as $producto) {
                 $<?= number_format($producto['subtotal'], 2, ',', '.') ?>
             </strong>
 
-            <button type="button" class="btn-eliminar btn btn-sm btn-outline-danger mt-2">🗑️ Quitar</button>
-
+                <!-- eliminar -->
+            <button type="button" class="btn-eliminar btn btn-sm btn-outline-danger mt-2" aria-label="Eliminar producto" title="Eliminar">🗑️</button>
         </div>
 
     </div>
@@ -231,13 +231,16 @@ foreach ($productos as $producto) {
 
 
                 <!-- FINALIZAR COMPRA -->
-                <button
-                     type="button"
-                    class="btn btn-premium-red w-100 fw-semibold"
-                    id="btnFinalizarCompra"
-                    >
-                      Finalizar compra
-                </button>
+                <?php if (!empty($productos)): ?>
+                 <a href="<?= BASE_URL ?>/src/views/compra_finalizada.php"
+                    class="btn btn-premium-red w-100 fw-semibold">
+                     Finalizar compra
+                 </a>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
+                         Finalizar compra
+                        </button>
+                    <?php endif; ?>
 
 
                 <!-- SEGUIR COMPRANDO -->
@@ -257,8 +260,46 @@ foreach ($productos as $producto) {
 </main>
 
 
+<!-- Cartel de confirmación para eliminar -->
+<div id="modalEliminar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;">
+    <div class="card card-premium p-4 text-center" style="max-width:360px;width:90%;">
+        <h2 class="h5 fw-bold text-white mb-2">¿Desea eliminar el producto?</h2>
+        <p class="text-secondary small mb-4">Se va a quitar de tu carrito.</p>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-premium-outline w-50" id="btnEliminarNo">No</button>
+            <button type="button" class="btn btn-premium-red w-50" id="btnEliminarSi">Sí</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
-import { actualizarCantidad, eliminarDelCarrito, finalizarCompra } from "../../assets/js/carrito.js"
+import { actualizarCantidad, eliminarDelCarrito } from "../../assets/js/carrito.js";
+
+const modal = document.getElementById('modalEliminar');
+let idPendiente = null;
+
+function pedirConfirmacion(idDetalle) {
+    idPendiente = idDetalle;
+    modal.style.display = 'flex';
+}
+function cerrarModal() {
+    idPendiente = null;
+    modal.style.display = 'none';
+}
+
+document.getElementById('btnEliminarNo').addEventListener('click', cerrarModal);
+modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); });
+
+document.getElementById('btnEliminarSi').addEventListener('click', async () => {
+    if (idPendiente === null) return;
+    const resultado = await eliminarDelCarrito(idPendiente);
+    if (resultado.success) {
+        location.reload(); // recarga: lista, total y "Mi Carrito (n)" quedan actualizados
+    } else {
+        cerrarModal();
+        alert(resultado.message);
+    }
+});
 
 document.getElementById('cartItems').addEventListener('click', async (e) => {
     const item = e.target.closest('.cart-item');
@@ -267,9 +308,7 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
     const idDetalle = parseInt(item.dataset.id, 10);
 
     if (e.target.closest('.btn-eliminar')) {
-        if (!confirm('¿Eliminar este producto del carrito?')) return;
-        const resultado = await eliminarDelCarrito(idDetalle);
-        resultado.success ? location.reload() : alert(resultado.message);
+        pedirConfirmacion(idDetalle);
         return;
     }
 
@@ -279,9 +318,7 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
         nuevaCantidad += e.target.closest('.btn-mas') ? 1 : -1;
 
         if (nuevaCantidad <= 0) {
-            if (!confirm('¿Eliminar este producto del carrito?')) return;
-            const resultado = await eliminarDelCarrito(idDetalle);
-            resultado.success ? location.reload() : alert(resultado.message);
+            pedirConfirmacion(idDetalle);
             return;
         }
 
@@ -289,18 +326,6 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
         resultado.success ? location.reload() : alert(resultado.message);
     }
 });
-
-document.getElementById('btnFinalizarCompra').addEventListener('click', async () => {
-    const resultado = await finalizarCompra();
-
-    if (resultado.success) {
-        alert(resultado.message);
-        location.reload();
-    } else {
-        alert(resultado.message);
-    }
-});
-
 </script>
 
 
