@@ -31,26 +31,27 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MVB - Accesorios y Repuestos Premium</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
+    <title>MVB | Accesorios, herramientas y cuidado del auto</title>
+    <link href="<?= BASE_URL ?>/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../assets/css/style.css') ?>" rel="stylesheet">
 </head>
 
-<body>
+<body class="<?= !empty($isHomePage) ? 'mvb-home' : (!empty($isCatalogPage) ? 'mvb-catalog-page' : '') ?>">
 
     <!-- Header / Navbar -->
-    <header>
+    <header class="mvb-site-header">
+        <div class="mvb-header-ribbon"><span>ACCESORIOS · LIMPIEZA · HERRAMIENTAS</span><a href="<?= BASE_URL ?>/index.php#como-empezar">Contactanos ↗</a></div>
         <nav class="navbar navbar-expand-lg navbar-dark navbar-premium py-3">
             <div class="container">
                 <!-- Marca actualizada a MVB -->
                 <a class="navbar-brand fw-bold text-uppercase tracking-wider" href="<?= BASE_URL ?>/index.php">
-                    <span class="text-white">MVB</span>
+                    <img class="mvb-nav-logo" src="<?= BASE_URL ?>/assets/img/logo.jpg" alt="MVB · Multiventas Barvie" width="76" height="76"><span class="mvb-nav-name">MVB<small>MULTIVENTAS BARVIE</small></span>
                 </a>
                 <div class="flex-grow-1 mx-lg-4 my-2 my-lg-0 order-3 order-lg-0 position-relative" id="searchWrapper">
-                    <form class="d-flex" role="search" id="searchForm">
+                    <form class="d-flex" role="search" id="<?= !empty($isHomePage) || !empty($isCatalogPage) ? 'catalogSearchForm' : 'searchForm' ?>" method="GET" action="<?= BASE_URL ?>/src/views/catalogo.php">
+                        <?php if (!empty($isCatalogPage) && isset($categoriaId)): ?><input type="hidden" name="categoria" value="<?= (int)$categoriaId ?>"><?php endif; ?>
                         <div class="input-group">
-                            <input type="search" class="form-control form-control-premium border-end-0" id="searchInput" placeholder="Buscar productos, marcas y más..." aria-label="Buscar" autocomplete="off">
+                            <input type="search" class="form-control form-control-premium border-end-0" id="searchInput" name="buscar" value="<?= !empty($isCatalogPage) ? htmlspecialchars($busqueda ?? '') : '' ?>" placeholder="Buscar productos, marcas y más..." aria-label="Buscar" autocomplete="off">
                             <button class="btn btn-premium-red px-3" type="submit" id="searchBtn" aria-label="Buscar">
                                 🔍
                             </button>
@@ -59,7 +60,7 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                     <div id="searchSuggestions" class="d-none"></div>
                 </div>
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navOpcion2">
+                    data-bs-target="#navOpcion2" aria-controls="navOpcion2" aria-expanded="false" aria-label="Abrir menú">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navOpcion2">
@@ -76,8 +77,8 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                             </ul>
                         </li>
                         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="<?= BASE_URL ?>/src/views/catalogo.php">Catálogo</a></li>
-                        <li class="nav-item"><a class="nav-link text-secondary" href="#">Ofertas</a></li>
-                        <li class="nav-item"><a class="nav-link text-secondary" href="#">Envíos</a></li>
+                        <li class="nav-item"><a class="nav-link text-secondary" href="<?= BASE_URL ?>/index.php#productos">Destacados</a></li>
+                        <li class="nav-item"><a class="nav-link text-secondary" href="<?= BASE_URL ?>/index.php#como-empezar">Conocé MVB</a></li>
                     </ul>
                     <div class="ms-lg-4 d-flex align-items-center gap-2">
                         <a href="<?= BASE_URL ?>/src/views/carrito.php"
@@ -90,10 +91,12 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                         <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['nombre'])): ?>
                             <div class="dropdown">
                                 <button class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                                    👤 <?= htmlspecialchars($_SESSION['nombre'] ?? $_SESSION['nombre_usuario'] ?? 'Mi Cuenta') ?>
+                                    <span class="mvb-account-avatar" aria-hidden="true"><?= htmlspecialchars(strtoupper(substr($_SESSION['nombre'] ?? 'M', 0, 1))) ?></span><span><?= htmlspecialchars($_SESSION['nombre'] ?? $_SESSION['nombre_usuario'] ?? 'Mi Cuenta') ?></span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userMenu">
-                                    <li><a href="<?= BASE_URL ?>/src/views/user/profile.php">⚙️ Mi Perfil</a></li>
+                                    <li class="mvb-menu-caption">TU CUENTA MVB</li>
+                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/user/profile.php">Mi perfil ↗</a></li>
+                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/carrito.php">Mi carrito ↗</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/src/controllers/auth/logout.php">Cerrar Sesión</a></li>
                                 </ul>
@@ -108,8 +111,8 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                 </div>
             </div>
         </nav>
-        
-        <?php if (basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>                               
+
+        <?php if (empty($isHomePage) && empty($isCatalogPage) && basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>
         <!-- Hero Section -->
         <div class="container py-5">
             <div class="row align-items-center g-5">

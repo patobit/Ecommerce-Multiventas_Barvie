@@ -11,6 +11,9 @@
   },
   "pluginOptions": {},
   "attributes": {
+    "Marca": {
+      "type": "string"
+    },
     "Nombre": {
       "type": "string"
     },

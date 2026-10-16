@@ -1,20 +1,12 @@
 <!-- Footer Premium -->
-    <footer class="bg-dark py-5 mt-5 border-top border-secondary border-opacity-25">
-        <div class="container">
-            <div class="row align-items-center justify-content-between gy-4">
-                <div class="col-12 col-lg-5 text-center text-lg-start">
-                    <h5 class="fw-bold text-white mb-1 text-uppercase tracking-wider">Multiventas Barvie</h5>
-                    <p class="text-secondary small mb-0">Pasión por los fierros. Componentes premium y el asesoramiento que tu motor se merece.</p>
-                </div>
-                <div class="col-12 col-lg-6">
-                    <form class="d-flex flex-column flex-sm-row gap-2">
-                        <input type="email" class="form-control form-control-premium" placeholder="Unite al Club de Ofertas" aria-label="Email">
-                        <button class="btn btn-premium-red px-4 fw-semibold" type="button">Suscribirse</button>
-                    </form>
-                </div>
-            </div>
-            <div class="text-center text-secondary small mt-4 pt-4 border-top border-secondary border-opacity-10">
-                <p class="mb-0">&copy; 2026 Multiventas Barvie. Todos los derechos reservados. TP-7 Plataformas Móviles.</p>
+    <footer id="como-empezar" class="mvb-footer mvb-footer-minimal mt-5">
+        <div class="mvb-wide">
+            <p class="mvb-footer-wordmark"><strong>MVB</strong><span aria-hidden="true"> | </span>Multiventas Barvie</p>
+            <p class="mvb-footer-tagline">Tu auto. Tu estilo. Tu próximo detalle.</p>
+            <div class="mvb-footer-socials" aria-label="Redes y contacto de MVB">
+                <a class="mvb-social-whatsapp" href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/whatsapp.png" alt="" width="32" height="32">WhatsApp ↗</a>
+                <a class="mvb-social-instagram" href="https://www.instagram.com/mv.barvie/" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/instagram.png" alt="" width="32" height="32">Instagram ↗</a>
+                <a class="mvb-social-mercadolibre" href="https://listado.mercadolibre.com.ar/_CustId_1356852917?item_id=MLA3791842558&amp;category_id=MLA414035&amp;seller_id=1356852917&amp;client=recoview-selleritems&amp;recos_listing=true#origin=upp&amp;component=sellerData&amp;typeSeller=classic" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/mercadolibre.png" alt="" width="44" height="32">Mercado Libre ↗</a>
             </div>
         </div>
     </footer>

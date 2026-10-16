@@ -686,6 +686,7 @@ export interface ApiProductoProducto extends Struct.CollectionTypeSchema {
       'api::producto.producto'
     > &
       Schema.Attribute.Private;
+    Marca: Schema.Attribute.String;
     Nombre: Schema.Attribute.String;
     Precio: Schema.Attribute.Decimal;
     Precio_oferta: Schema.Attribute.Decimal &
@@ -1177,6 +1178,7 @@ export interface PluginUsersPermissionsUser
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     Direccion: Schema.Attribute.String;
+    Direcciones: Schema.Attribute.JSON;
     email: Schema.Attribute.Email &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -1215,6 +1217,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 3;
       }>;
+    Vehiculos: Schema.Attribute.JSON;
   };
 }
 

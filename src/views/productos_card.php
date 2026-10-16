@@ -43,6 +43,8 @@ function renderProductCard(array $p): string
     if ($primeraImagen) {
         $imagenHtml = '<img src="' . htmlspecialchars($primeraImagen) . '" '
         . 'class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;" alt="' . htmlspecialchars($p['nombre']) . '">';
+        } elseif ($logoMarca = obtenerLogoMarca($p)) {
+            $imagenHtml = '<div class="mvb-brand-placeholder"><img src="' . htmlspecialchars($logoMarca) . '" alt="Marca del producto"><span>Foto del producto pendiente</span></div>';
         } else {
             $imagenHtml = '<div class="w-100 rounded-3 mb-3 d-flex align-items-center justify-content-center" '
             . 'style="height:160px;background-color:#0b0c0e;border:1px dashed #495057;">'
@@ -68,7 +70,8 @@ function renderProductCard(array $p): string
                 <span><?= $precioHtml ?></span>
                         <button type="button"
         class="btn btn-premium-red"
-        onclick="event.stopPropagation(); addToCart(<?= (int) $p['id_producto'] ?>, 1, '<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')">
+        <?= $disabledAttr ?>
+        onclick="event.stopPropagation(); addToCart(<?= (int) $p['id_producto'] ?>, 1, <?= htmlspecialchars(json_encode($p['nombre'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)">
     Agregar al carrito
 </button>
 

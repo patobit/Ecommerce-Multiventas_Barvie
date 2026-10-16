@@ -77,7 +77,7 @@ $vehiculosUsuario = $cuenta['Vehiculos'] ?? (empty($cuenta['Auto_marca']) && emp
     <title>Mi Perfil - Panel de Usuario</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../assets/css/style.css') ?>">
 
     <style>
         .profile-container { max-width: 850px; }
@@ -142,19 +142,20 @@ $vehiculosUsuario = $cuenta['Vehiculos'] ?? (empty($cuenta['Auto_marca']) && emp
         }
     </style>
 </head>
-<body>
+<body class="mvb-profile-page">
+    <nav class="mvb-profile-nav" aria-label="Navegación de cuenta"><a href="<?= BASE_URL ?>/index.php"><strong>MVB</strong> <span>Multiventas Barvie</span></a><a href="<?= BASE_URL ?>/src/views/catalogo.php">Volver al catálogo ↗</a></nav>
 
     <div class="profile-page-wrapper">
         <div class="profile-container">
             
             <div class="profile-header">
-                <h2 class="profile-title">Mi Cuenta</h2>
-                <p class="profile-subtitle">Gestiona tu información personal, direcciones de envío y datos de tu vehículo.</p>
+                <div class="mvb-profile-avatar" aria-hidden="true"><?= htmlspecialchars(strtoupper(substr($userData['nombre'] ?: 'M', 0, 1)), ENT_QUOTES, 'UTF-8') ?></div>
+                <div><p class="mvb-profile-eyebrow">TU CUENTA MVB</p><h1 class="profile-title">Hola<?= $userData['nombre'] ? ', ' . htmlspecialchars($userData['nombre'], ENT_QUOTES, 'UTF-8') : '' ?>.</h1><p class="profile-subtitle">Tus datos, direcciones y vehículos.</p></div>
             </div>
 
             <div class="profile-tabs">
                 <button class="profile-tab-btn active" type="button" onclick="openTab(event, 'personal')">
-                    <i class="bi bi-person-fill"></i> Datos Personales
+                    <i class="bi bi-person-fill"></i> Datos
                 </button>
                 <button class="profile-tab-btn" type="button" onclick="openTab(event, 'envio')">
                     <i class="bi bi-geo-alt-fill"></i> Direcciones

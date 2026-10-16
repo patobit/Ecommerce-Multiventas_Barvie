@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/bootstrap.min.css">
 <script src="<?= BASE_URL ?>/assets/js/bootstrap.min.js"></script>
 ...
-<img src="<?= BASE_URL ?>/assets/img/php-logo.png" alt="Logo" width="45" class="d-inline-block align-text-top">
+<img src="<?= BASE_URL ?>/assets/img/logo.jpg" alt="Multiventas Barvie" width="45" class="d-inline-block align-text-top">
 ...
 <a href="<?= BASE_URL ?>/src/controllers/auth/logout.php" class="btn text-danger">Logout</a>
 <?php

@@ -13,6 +13,18 @@ require_once __DIR__ . '/../../config/strapi_client.php';
 // MAPEO: de la forma "Strapi" a la forma "antigua estilo PDO"
 // -----------------------------------------------------------------------
 
+function obtenerLogoMarca(array $producto): ?string
+{
+    $nombre = strtolower(($producto['marca'] ?? '') . ' ' . ($producto['nombre'] ?? ''));
+    if (strtolower(trim($producto['marca'] ?? '')) === 'revi') return BASE_URL . '/assets/img/marca-revigal.png';
+    foreach (['revigal' => 'revigal', 'iael' => 'iael', 'goodyear' => 'goodyear', 'barbie' => 'barbie', 'armor all' => 'armorall', 'armorall' => 'armorall', 'california scents' => 'california-scents'] as $marca => $archivo) {
+        if (str_contains($nombre, $marca)) {
+            return BASE_URL . '/assets/img/marca-' . $archivo . '.png';
+        }
+    }
+    return null;
+}
+
 function mapearProducto(array $item): array
 {
     $categoria = $item['categoria'] ?? null;
@@ -21,6 +33,7 @@ function mapearProducto(array $item): array
         'id_producto'      => $item['id'] ?? null,
         'document_id'      => $item['documentId'] ?? null,
         'nombre'           => $item['Nombre'] ?? '',
+        'marca'            => $item['Marca'] ?? '',
         'descripcion'      => $item['Descripcion'] ?? '',
         'stock'            => $item['Stock'] ?? 0,
         'precio'           => $item['Precio'] ?? 0,
@@ -72,6 +85,26 @@ function mapearCategoria(array $item): array
 // -----------------------------------------------------------------------
 // FUNCIONES PÚBLICAS (misma firma que el controller original, sin $pdo)
 // -----------------------------------------------------------------------
+
+function obtenerTodosLosProductos(): array
+{
+    $productos = [];
+    $inicio = 0;
+    do {
+        $resultado = strapiRequest('GET', 'productos', [
+            'populate' => ['categoria', 'Imagen'],
+            'sort' => 'Nombre:asc',
+            'pagination' => ['start' => $inicio, 'limit' => 100],
+        ]);
+        $items = $resultado['data']['data'] ?? [];
+        foreach ($items as $item) {
+            $productos[] = mapearProducto($item);
+        }
+        $inicio += count($items);
+        $total = (int) ($resultado['data']['meta']['pagination']['total'] ?? $inicio);
+    } while (!empty($items) && $inicio < $total);
+    return $productos;
+}
 
 function obtenerProductosNuevos(int $limite = 4): array
 {
@@ -214,6 +247,7 @@ function buscarProductos(string $termino): array
             '$or' => [
                 ['Nombre'      => ['$containsi' => $termino]],
                 ['Descripcion' => ['$containsi' => $termino]],
+                ['Marca' => ['$containsi' => strtolower(trim($termino)) === 'revigal' ? 'Revi' : $termino]],
             ],
         ],
         'populate'   => ['categoria', 'Imagen'],
@@ -223,4 +257,18 @@ function buscarProductos(string $termino): array
 
     $items = $resultado['data']['data'] ?? [];
     return array_map('mapearProducto', $items);
+}
+
+function obtenerArbolCategorias(): array
+{
+    $categorias = [];
+    $inicio = 0;
+    do {
+        $resultado = strapiRequest('GET', 'categorias', ['populate' => ['categoria'], 'sort' => 'Nombre:asc', 'pagination' => ['start' => $inicio, 'limit' => 100]]);
+        $items = $resultado['data']['data'] ?? [];
+        foreach ($items as $item) $categorias[] = mapearCategoria($item);
+        $inicio += count($items);
+        $total = (int)($resultado['data']['meta']['pagination']['total'] ?? $inicio);
+    } while ($items && $inicio < $total);
+    return $categorias;
 }
