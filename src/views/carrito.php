@@ -232,10 +232,11 @@ foreach ($productos as $producto) {
 
                 <!-- FINALIZAR COMPRA -->
                 <?php if (!empty($productos)): ?>
-                 <a href="<?= BASE_URL ?>/src/views/compra_finalizada.php"
-                    class="btn btn-premium-red w-100 fw-semibold">
-                     Finalizar compra
-                 </a>
+                <form method="post" action="<?= BASE_URL ?>/src/views/compra_finalizada.php">
+                    <button type="submit" class="btn btn-premium-red w-100 fw-semibold">
+                         Finalizar compra
+                    </button>
+                </form>
                     <?php else: ?>
                         <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
                          Finalizar compra

@@ -246,7 +246,7 @@ function finalizarCompra(string $jwt, int $idUsuario): array
             ],
         ], $jwt);
         if (!$linea['ok']) {
-            return ['success' => false, 'message' => 'No se pudo completar la compra. Contactá a la tienda antes de reintentar.'];
+            return ['success' => false, 'message' => 'Error en detalle-compras: ' . ($linea['error'] ?? '')];
         }
     }
 
