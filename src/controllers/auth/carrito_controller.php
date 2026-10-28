@@ -1,9 +1,12 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// ENDPOINT PHP: recibe fetch del navegador. La sesion identifica al usuario y aporta su JWT. POST agrega, GET lista, PUT cambia cantidad y DELETE elimina. Devuelve JSON.
+
 header('Content-Type: application/json; charset=utf-8');
 set_exception_handler(function (Throwable $e) {
     error_log($e->getMessage());
-    http_response_code(502);
-    echo json_encode(['success' => false, 'message' => 'No se pudo completar la operación con Strapi. Intentá de nuevo.']);
+    http_response_code($e->getCode() === 401 ? 401 : 502);
+    echo json_encode(['success' => false, 'message' => $e->getCode() === 401 ? 'Tu sesión venció. Iniciá sesión nuevamente.' : 'No se pudo completar la operación con Strapi. Intentá de nuevo.']);
 });
 
 if (session_status() === PHP_SESSION_NONE) {

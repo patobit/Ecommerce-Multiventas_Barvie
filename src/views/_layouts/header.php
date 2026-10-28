@@ -8,9 +8,22 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
+require_once __DIR__ . '/../../controllers/auth/carrito.php';
 
 $categoriasNavbar = obtenerCategorias(null); // categorías principales
 
+// Contador del botón "Mi Carrito". Antes usaba un id_usuario=2 "temporal";
+// ahora que el login es real, si no hay nadie logueado el contador queda en 0
+// (no tiene sentido pedirle el carrito a Strapi sin un usuario autenticado).
+$cantidadCarrito = 0;
+if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
+    try {
+    $resultadoCarrito = obtenerProductosDelCarrito($_SESSION['usuario']['jwt'], (int) $_SESSION['usuario']['id']);
+    foreach ($resultadoCarrito['productos'] as $producto) {
+        $cantidadCarrito += (int) $producto['cantidad'];
+    }
+    } catch (RuntimeException $e) { error_log($e->getMessage()); }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -68,6 +81,11 @@ $categoriasNavbar = obtenerCategorias(null); // categorías principales
                         <li class="nav-item"><a class="nav-link text-secondary" href="<?= BASE_URL ?>/index.php#como-empezar">Conocé MVB</a></li>
                     </ul>
                     <div class="ms-lg-4 d-flex align-items-center gap-2">
+                        <a href="<?= BASE_URL ?>/src/views/carrito.php"
+                           class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
+                           id="cartBtn">
+                            Mi Carrito (<?= $cantidadCarrito ?>)
+                        </a>
 
                         <!-- Detección de Usuario / Sesión -->
                         <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['nombre'])): ?>
@@ -77,7 +95,9 @@ $categoriasNavbar = obtenerCategorias(null); // categorías principales
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userMenu">
                                     <li class="mvb-menu-caption">TU CUENTA MVB</li>
+                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/user/pedidos.php">Mis pedidos ↗</a></li>
                                     <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/user/profile.php">Mi perfil ↗</a></li>
+                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/carrito.php">Mi carrito ↗</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/src/controllers/auth/logout.php">Cerrar Sesión</a></li>
                                 </ul>
@@ -93,7 +113,7 @@ $categoriasNavbar = obtenerCategorias(null); // categorías principales
             </div>
         </nav>
 
-        <?php if (empty($isHomePage) && empty($isCatalogPage) && empty($isAuthPage) && empty($isOrdersPage)): ?>
+        <?php if (empty($isHomePage) && empty($isCatalogPage) && empty($isAuthPage) && empty($isOrdersPage) && basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>
         <!-- Hero Section -->
         <div class="container py-5">
             <div class="row align-items-center g-5">

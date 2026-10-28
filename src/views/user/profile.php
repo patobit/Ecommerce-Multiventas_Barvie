@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// PERFIL: GET carga la cuenta desde /api/profile; POST valida CSRF y envia cambios con PUT a Strapi. Si el navegador pide JSON, responde JSON para autoguardar sin recargar.
+
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/strapi_client.php';

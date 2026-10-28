@@ -12,6 +12,7 @@ if (empty($_SESSION['usuario']['id']) || empty($_SESSION['usuario']['jwt'])) {
     exit;
 }
 
+$_SESSION['checkout_csrf'] ??= bin2hex(random_bytes(32));
 $idUsuario = (int) $_SESSION['usuario']['id'];
 $jwt       = $_SESSION['usuario']['jwt'];
 
@@ -20,7 +21,7 @@ require_once __DIR__ . '/_layouts/header.php';
 try {
     $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
 } catch (RuntimeException $e) {
-    echo '<div class="container alert alert-warning">' . htmlspecialchars($e->getMessage()) . '</div>';
+    echo '<div class="container alert alert-warning">No se pudo consultar el carrito. Intentá de nuevo.</div>';
     require_once __DIR__ . '/_layouts/footer.php';
     exit;
 }
@@ -156,8 +157,8 @@ foreach ($productos as $producto) {
                 $<?= number_format($producto['subtotal'], 2, ',', '.') ?>
             </strong>
 
-                <!-- eliminar -->
-            <button type="button" class="btn-eliminar btn btn-sm btn-outline-danger mt-2" aria-label="Eliminar producto" title="Eliminar">🗑️</button>
+            <button type="button" class="btn-eliminar btn btn-sm btn-outline-danger mt-2">🗑️ Quitar</button>
+
         </div>
 
     </div>
@@ -220,7 +221,7 @@ foreach ($productos as $producto) {
                 <div class="d-flex justify-content-between align-items-center mb-4">
 
                     <span class="fw-bold text-white">
-                        Total
+                        Total de productos
                     </span>
 
                     <span class="fw-bold text-danger fs-5" id="cartTotal">
@@ -230,19 +231,24 @@ foreach ($productos as $producto) {
                 </div>
 
 
-                <!-- FINALIZAR COMPRA -->
-                <?php if (!empty($productos)): ?>
-                 <a href="<?= BASE_URL ?>/src/views/compra_finalizada.php"
-                    class="btn btn-premium-red w-100 fw-semibold">
-                     Finalizar compra
-                 </a>
-                    <?php else: ?>
-                        <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
-                         Finalizar compra
-                        </button>
-                    <?php endif; ?>
-
-
+<form id="checkoutForm" class="checkout-form">
+<input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['checkout_csrf']) ?>">
+<input type="hidden" name="carrito" value="<?= htmlspecialchars($resultado['id_carrito'] ?? '') ?>">
+<h2 class="h5 text-white mb-3">Datos del pedido</h2>
+<label for="pedido-entrega">Entrega</label><select id="pedido-entrega" name="entrega" class="form-select form-control-premium" required><option value="Retiro">Retiro en la tienda</option><option value="Envio">Envío a domicilio</option></select>
+<label for="pedido-pago">Método de pago</label><select id="pedido-pago" name="pago" class="form-select form-control-premium" required><option value="A coordinar">A coordinar con la tienda</option><option value="Transferencia">Transferencia bancaria</option><option value="Efectivo al retirar">Efectivo al retirar</option></select>
+<label for="pedido-nombre">Nombre de quien recibe o retira</label><input id="pedido-nombre" name="nombre" class="form-control form-control-premium" required maxlength="254" autocomplete="name" value="<?= htmlspecialchars(trim(($_SESSION['usuario']['nombre'] ?? '') . ' ' . ($_SESSION['usuario']['apellido'] ?? ''))) ?>">
+<label for="pedido-telefono">Teléfono de contacto</label><input id="pedido-telefono" type="tel" name="telefono" class="form-control form-control-premium" required maxlength="40" autocomplete="tel" value="<?= htmlspecialchars($_SESSION['usuario']['telefono'] ?? '') ?>">
+<div id="pedido-direccion" hidden>
+<label for="pedido-calle">Calle y número</label><input id="pedido-calle" name="direccion" class="form-control form-control-premium" maxlength="254" autocomplete="street-address">
+<label for="pedido-ciudad">Ciudad</label><input id="pedido-ciudad" name="ciudad" class="form-control form-control-premium" maxlength="254" autocomplete="address-level2">
+<label for="pedido-provincia">Provincia</label><input id="pedido-provincia" name="provincia" class="form-control form-control-premium" maxlength="254" autocomplete="address-level1">
+<label for="pedido-cp">Código postal</label><input id="pedido-cp" name="codigo_postal" class="form-control form-control-premium" maxlength="20" autocomplete="postal-code">
+<p class="small text-secondary">El costo del envío se confirma con la tienda.</p></div>
+<label for="pedido-notas">Indicaciones (opcional)</label><textarea id="pedido-notas" name="notas" class="form-control form-control-premium" maxlength="1000" rows="2"></textarea>
+<p class="small text-secondary mt-3">Se guarda tu pedido; este formulario no cobra ni solicita datos de tarjeta.</p>
+<button type="submit" class="btn btn-premium-red w-100 fw-semibold" id="btnFinalizarCompra" <?= empty($productos) ? 'disabled' : '' ?>>Confirmar pedido</button>
+<p id="checkout-status" role="status" class="small mt-3 mb-0"></p></form>
                 <!-- SEGUIR COMPRANDO -->
                 <a
                     href="<?= BASE_URL ?>/src/views/catalogo.php"
@@ -260,46 +266,8 @@ foreach ($productos as $producto) {
 </main>
 
 
-<!-- Cartel de confirmación para eliminar -->
-<div id="modalEliminar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;">
-    <div class="card card-premium p-4 text-center" style="max-width:360px;width:90%;">
-        <h2 class="h5 fw-bold text-white mb-2">¿Desea eliminar el producto?</h2>
-        <p class="text-secondary small mb-4">Se va a quitar de tu carrito.</p>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-premium-outline w-50" id="btnEliminarNo">No</button>
-            <button type="button" class="btn btn-premium-red w-50" id="btnEliminarSi">Sí</button>
-        </div>
-    </div>
-</div>
-
 <script type="module">
-import { actualizarCantidad, eliminarDelCarrito } from "../../assets/js/carrito.js";
-
-const modal = document.getElementById('modalEliminar');
-let idPendiente = null;
-
-function pedirConfirmacion(idDetalle) {
-    idPendiente = idDetalle;
-    modal.style.display = 'flex';
-}
-function cerrarModal() {
-    idPendiente = null;
-    modal.style.display = 'none';
-}
-
-document.getElementById('btnEliminarNo').addEventListener('click', cerrarModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); });
-
-document.getElementById('btnEliminarSi').addEventListener('click', async () => {
-    if (idPendiente === null) return;
-    const resultado = await eliminarDelCarrito(idPendiente);
-    if (resultado.success) {
-        location.reload(); // recarga: lista, total y "Mi Carrito (n)" quedan actualizados
-    } else {
-        cerrarModal();
-        alert(resultado.message);
-    }
-});
+import { actualizarCantidad, eliminarDelCarrito, finalizarCompra } from "../../assets/js/carrito.js"
 
 document.getElementById('cartItems').addEventListener('click', async (e) => {
     const item = e.target.closest('.cart-item');
@@ -308,7 +276,9 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
     const idDetalle = parseInt(item.dataset.id, 10);
 
     if (e.target.closest('.btn-eliminar')) {
-        pedirConfirmacion(idDetalle);
+        if (!confirm('¿Eliminar este producto del carrito?')) return;
+        const resultado = await eliminarDelCarrito(idDetalle);
+        resultado.success ? location.reload() : alert(resultado.message);
         return;
     }
 
@@ -318,7 +288,9 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
         nuevaCantidad += e.target.closest('.btn-mas') ? 1 : -1;
 
         if (nuevaCantidad <= 0) {
-            pedirConfirmacion(idDetalle);
+            if (!confirm('¿Eliminar este producto del carrito?')) return;
+            const resultado = await eliminarDelCarrito(idDetalle);
+            resultado.success ? location.reload() : alert(resultado.message);
             return;
         }
 
@@ -326,6 +298,31 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
         resultado.success ? location.reload() : alert(resultado.message);
     }
 });
+
+const form = document.getElementById('checkoutForm');
+const entrega = document.getElementById('pedido-entrega');
+const direccion = document.getElementById('pedido-direccion');
+entrega.addEventListener('change', () => {
+    const envio = entrega.value === 'Envio';
+    direccion.hidden = !envio;
+    document.getElementById('cartShipping').textContent = envio ? 'A confirmar' : '$0,00';
+    direccion.querySelectorAll('input').forEach(input => input.required = envio);
+    const efectivo = document.querySelector('#pedido-pago option[value="Efectivo al retirar"]');
+    efectivo.disabled = envio;
+    if (envio && document.getElementById('pedido-pago').value === 'Efectivo al retirar') document.getElementById('pedido-pago').value = 'A coordinar';
+});
+form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const button = document.getElementById('btnFinalizarCompra');
+    const status = document.getElementById('checkout-status');
+    button.disabled = true;
+    status.textContent = 'Guardando pedido…';
+    const resultado = await finalizarCompra(Object.fromEntries(new FormData(form)));
+    if (resultado.success) location.href = window.BASE_URL + '/src/views/user/pedidos.php';
+    else {status.textContent = resultado.message; button.disabled = false;}
+});
+
 </script>
 
 

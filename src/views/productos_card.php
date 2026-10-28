@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// VISTA REUTILIZABLE: renderProductCard recibe datos ya consultados y devuelve HTML. No guarda productos ni consulta Strapi. Su boton llama a addToCart en el navegador.
+
 // =============================================================================
 // RENDERIZADO DE TARJETAS DE PRODUCTO (SOLO VISTA/HTML — SIN CONSULTAS A LA DB)
 // =============================================================================

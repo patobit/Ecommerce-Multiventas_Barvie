@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// CATALOGO: lee categoria y buscar de la URL (GET), obtiene productos/categorias de Strapi y aplica ambos filtros juntos. El arbol es navegacion; el centro muestra productos.
+
 require_once __DIR__ . '/../config/rutas.php';                     // define BASE_URL
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../controllers/auth/productos_controller.php'; // consultas a Strapi

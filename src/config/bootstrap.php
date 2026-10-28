@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// INICIO COMPARTIDO: abre la sesion y carga configuracion. guardarSesionUsuario guarda identidad y JWT del login para las siguientes peticiones PHP.
+
 /**
  * Bootstrap global del proyecto.
  *
@@ -25,6 +28,7 @@ function guardarSesionUsuario(array $user, string $jwt): void
     session_regenerate_id(true);
     // Invalida los formularios abiertos de otra cuenta al cambiar de usuario.
     $_SESSION['perfil_csrf'] = bin2hex(random_bytes(32));
+    $_SESSION['checkout_csrf'] = bin2hex(random_bytes(32));
     $nombre = $user['Nombre'] ?? $user['username'] ?? '';
     $_SESSION['usuario_id'] = $user['id'];
     $_SESSION['nombre'] = $nombre;

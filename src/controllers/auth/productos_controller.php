@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../config/strapi_client.php';
 // MAPEO: de la forma "Strapi" a la forma "antigua estilo PDO"
 // -----------------------------------------------------------------------
 
+// ESTUDIO obtenerLogoMarca: Elige el logo conocido como respaldo cuando falta una foto; no modifica la marca guardada.
 function obtenerLogoMarca(array $producto): ?string
 {
     $nombre = strtolower(($producto['marca'] ?? '') . ' ' . ($producto['nombre'] ?? ''));
@@ -25,6 +26,7 @@ function obtenerLogoMarca(array $producto): ?string
     return null;
 }
 
+// ESTUDIO mapearProducto: Traduce Nombre/Precio/Stock/Marca de Strapi a nombre/precio/stock/marca usados por las vistas.
 function mapearProducto(array $item): array
 {
     $categoria = $item['categoria'] ?? null;
@@ -44,6 +46,7 @@ function mapearProducto(array $item): array
     ];
 }
 
+// ESTUDIO mapearImagenes: Convierte los datos de Imagen en una lista de URLs que el navegador puede descargar.
 function mapearImagenes(mixed $imagenData): array
 {
     if (!$imagenData) {
@@ -69,6 +72,7 @@ function mapearImagenes(mixed $imagenData): array
     return $urls;
 }
 
+// ESTUDIO mapearCategoria: Traduce una categoria de Strapi al formato que usan el catalogo y su arbol.
 function mapearCategoria(array $item): array
 {
     $padre = $item['categoria'] ?? null;
@@ -86,6 +90,7 @@ function mapearCategoria(array $item): array
 // FUNCIONES PÚBLICAS (misma firma que el controller original, sin $pdo)
 // -----------------------------------------------------------------------
 
+// ESTUDIO obtenerTodosLosProductos: Consulta paginas de productos hasta completar el catalogo; evita quedarse solo con la primera pagina.
 function obtenerTodosLosProductos(): array
 {
     $productos = [];
@@ -106,6 +111,7 @@ function obtenerTodosLosProductos(): array
     return $productos;
 }
 
+// ESTUDIO obtenerProductosNuevos: Pide productos ordenados por id descendente, limitados a la cantidad solicitada.
 function obtenerProductosNuevos(int $limite = 4): array
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -125,6 +131,7 @@ function obtenerProductosNuevos(int $limite = 4): array
  * Strapi no hace GROUP BY. Si el catálogo de compras crece mucho, conviene
  * un endpoint custom en Strapi que agregue en la base de datos.
  */
+// ESTUDIO obtenerProductoMasVendido: Agrega cantidades de detalles de compras para calcular un producto destacado; necesita permiso de lectura.
 function obtenerProductoMasVendido(): array
 {
     $resultado = strapiRequest('GET', 'detalle-compras', [
@@ -166,6 +173,7 @@ function obtenerProductoMasVendido(): array
     return [$productoMapeado];
 }
 
+// ESTUDIO obtenerProductosOferta: Consulta ofertas segun los datos disponibles; revisar el cuerpo para conocer el filtro aplicado.
 function obtenerProductosOferta(int $limite = 4): array
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -178,6 +186,7 @@ function obtenerProductosOferta(int $limite = 4): array
         fn($p) => (float) $p['precio_oferta'] < (float) $p['precio']));
 }
 
+// ESTUDIO obtenerCategorias: Pide categorias del nivel indicado; null representa categorias principales.
 function obtenerCategorias(?int $idPadre = null): array
 {
     $filtro = $idPadre === null
@@ -193,6 +202,7 @@ function obtenerCategorias(?int $idPadre = null): array
     return array_map('mapearCategoria', $items);
 }
 
+// ESTUDIO obtenerCategoriaPorId: Busca una categoria por su id numerico; devuelve null si no hay coincidencia.
 function obtenerCategoriaPorId(int $id): ?array
 {
     $resultado = strapiRequest('GET', 'categorias', [
@@ -205,6 +215,7 @@ function obtenerCategoriaPorId(int $id): ?array
     return empty($items) ? null : mapearCategoria($items[0]);
 }
 
+// ESTUDIO contarProductosEnCategoria: Cuenta los productos obtenidos para una categoria.
 function contarProductosEnCategoria(int $idCategoria): int
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -215,6 +226,7 @@ function contarProductosEnCategoria(int $idCategoria): int
     return $resultado['data']['meta']['pagination']['total'] ?? 0;
 }
 
+// ESTUDIO obtenerProductosPorCategoria: Obtiene productos vinculados a la categoria solicitada.
 function obtenerProductosPorCategoria(int $idCategoria): array
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -228,6 +240,7 @@ function obtenerProductosPorCategoria(int $idCategoria): array
     return array_map('mapearProducto', $items);
 }
 
+// ESTUDIO obtenerProductoPorId: Busca por id numerico para abrir una ficha; el resultado incluye document_id para escrituras REST.
 function obtenerProductoPorId(int $id): ?array
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -240,6 +253,7 @@ function obtenerProductoPorId(int $id): ?array
     return empty($items) ? null : mapearProducto($items[0]);
 }
 
+// ESTUDIO buscarProductos: Consulta coincidencias del termino en productos; no confundir con el filtro combinado de catalogo.php.
 function buscarProductos(string $termino): array
 {
     $resultado = strapiRequest('GET', 'productos', [
@@ -259,6 +273,7 @@ function buscarProductos(string $termino): array
     return array_map('mapearProducto', $items);
 }
 
+// ESTUDIO obtenerArbolCategorias: Recupera categorias con su padre para construir la navegacion del catalogo.
 function obtenerArbolCategorias(): array
 {
     $categorias = [];

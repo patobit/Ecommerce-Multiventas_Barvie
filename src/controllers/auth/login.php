@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// LOGIN: recibe email/password por POST y los valida contra /api/auth/local. Si Strapi devuelve usuario y JWT, guarda la sesion PHP y redirige al inicio.
+
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/strapi_client.php';//TRAE LOS ARCHIVOS DE CONFIGURACION

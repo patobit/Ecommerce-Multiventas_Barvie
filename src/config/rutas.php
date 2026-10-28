@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// RUTAS WEB: BASE_URL es el prefijo de la tienda en Apache, por ejemplo /Mvbarvie. No es la URL de Strapi ni una ruta del disco.
+
 // RUTA BASE DEL PROYECTO (DETECCIÓN AUTOMÁTICA Y DINÁMICA)
 if (!defined('BASE_URL')) {
     // $_SERVER['SCRIPT_NAME'] es una variable del sistema PHP, déjala TAL CUAL.

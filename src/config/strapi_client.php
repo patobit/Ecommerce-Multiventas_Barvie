@@ -25,35 +25,29 @@ if (!defined('STRAPI_URL')) {
  *         'data' es el JSON ya decodificado que devolvió Strapi (con su propio
  *         'data'/'meta' adentro, o 'jwt'/'user' en el caso de auth/local).
  */
+// ESTUDIO strapiRequest: Puente PHP -> Strapi: arma URL, query y JSON, agrega Authorization con JWT y ejecuta cURL. Devuelve ok/status/data/error. Un 401 invalida la sesion local si el token era el de ese usuario.
 function strapiRequest(string $method, string $endpoint, array $query = [], ?array $body = null, ?string $token = null): array
-//UNA SOLA FUNCION PARA TODAS LAS LLAMADAS A STRAPI
 {
-
-    //ARMA UNA URL COM PLETA PARA CODIFICAR LOS PARAMETROS DE FORMA SEGURA 
     $url = rtrim(STRAPI_URL, '/') . '/api/' . ltrim($endpoint, '/');
     if (!empty($query)) {
         $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
-    //PIDE LA RESPUESTA JSON. SI HAY TOKEN, LO MADA EN EL HEADER PARA RUTAS QUE NECESUTAN ESTAR LOGUEADAS
     $headers = ['Accept: application/json'];
     if ($token) {
         $headers[] = 'Authorization: Bearer ' . $token;
     }
 
     $options = [
-        CURLOPT_RETURNTRANSFER => true,//DEVUELVE LA RESPUESTA COMO TEXTO
-        CURLOPT_TIMEOUT        => 10,// SI STRAPI NO RESPONDE EN 10 SEGUNDO, CORTA
-        CURLOPT_CUSTOMREQUEST  => strtoupper($method),// DEFINE UN METODO(GET, POST, ETC)
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CUSTOMREQUEST  => strtoupper($method),
     ];
 
-    //SI HAY DATOS PARA ENVIAR LOS CONVIERTE EN JSON CON json_encode
     if ($body !== null) {
         $options[CURLOPT_POSTFIELDS] = json_encode($body);
         $headers[] = 'Content-Type: application/json';
     }
-
-    //EJECUTA LA PETICION, GUARDA LA RESPUESTA, EL CODIGO HTTP Y EL ERROR DE CONEXION, Y CIERRA LA CONEXION
     $options[CURLOPT_HTTPHEADER] = $headers;
 
     $ch = curl_init($url);
@@ -64,22 +58,25 @@ function strapiRequest(string $method, string $endpoint, array $query = [], ?arr
     $curlError = curl_error($ch);
     curl_close($ch);
 
-    //SI NO SE PUDO CONECTAR, LO REGISTRA EN EL LOG Y DEVUELVE UN ERROR 
     if ($curlError !== '') {
         error_log("strapiRequest: error de conexión a Strapi ($method $endpoint): $curlError");
         return ['ok' => false, 'status' => 0, 'data' => null, 'error' => 'No se pudo conectar con Strapi. ¿Está corriendo el servidor?'];
     }
 
-    // CONVIERTE EL JSON EN ARREGLO PHP. SI EL HTTP NO ES 2XX(200 A 299), LO TRATA COMO ERROR Y DEVUELVE EL MENSAJE DE STRAPI
     $decoded = json_decode($response, true);
 
+    // Una sesión PHP puede seguir abierta cuando Strapi ya rechazó su JWT.
+    if ($httpCode === 401 && $token !== null &&
+        $token === ($_SESSION['usuario']['jwt'] ?? null)) {
+        unset($_SESSION['usuario'], $_SESSION['usuario_id'], $_SESSION['nombre'], $_SESSION['nombre_usuario'], $_SESSION['perfil_csrf'], $_SESSION['checkout_csrf']);
+        $_SESSION['error_login'] = 'Tu sesión venció. Iniciá sesión nuevamente para usar el carrito.';
+    }
     if ($httpCode < 200 || $httpCode >= 300) {
         $mensajeError = $decoded['error']['message'] ?? "Error HTTP $httpCode";
         error_log("strapiRequest: Strapi devolvió HTTP $httpCode para $method $endpoint ");
         return ['ok' => false, 'status' => $httpCode, 'data' => $decoded, 'error' => $mensajeError];
     }
 
-    // SI LA RESPUESTA NO ES JSON VALIDO, ERROR. SI TODO ESTA BIEN, DEVUELVE OK-->TRUE CON LOS DATOS
     if ($httpCode !== 204 && !is_array($decoded)) {
         return ['ok' => false, 'status' => $httpCode, 'data' => null, 'error' => 'Strapi devolvió una respuesta inválida.'];
     }

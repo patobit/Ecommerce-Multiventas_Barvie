@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// PUNTO DE ENTRADA: el navegador pide esta pagina. PHP consulta productos en Strapi, selecciona 12 con foto y stock, y genera el HTML. El navegador recibe HTML; no ejecuta este PHP.
+
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/src/config/rutas.php';
 require_once __DIR__ . '/src/config/database.php';

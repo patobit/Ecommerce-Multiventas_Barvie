@@ -1,4 +1,7 @@
 <?php
+// GUIA DE ESTUDIO MVB
+// REGISTRO: recibe el formulario, valida sus campos y solicita la creacion de la cuenta en Strapi. La cuenta de cliente es distinta de una cuenta administradora de Strapi.
+
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../config/strapi_client.php';

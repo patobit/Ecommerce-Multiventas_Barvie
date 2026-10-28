@@ -35,60 +35,39 @@ function showToast(productName) {
 /**
  * Se llama desde onclick="addToCart(id, cantidad, nombre)" en las tarjetas
  * de producto y en la vista de detalle.
- * TODO: hoy solo actualiza el contador visual + muestra el toast. Cuando
- * el carrito se conecte de verdad a la base (tablas carritos/detalle_carrito),
- * acá va a hacer falta un fetch()/POST al backend para persistirlo.
+ * Guarda el producto en Strapi y recupera el contador real del carrito.
  */
-function addToCart(id, cantidad = 1, nombre = 'Producto') {
-    cantidad = parseInt(cantidad, 10) || 1;
-    const idProducto = parseInt(id, 10) || 0;//CONVIERTE A NYUMEROS Y SI NO SE PUEDE DEJA 0
-
-    if (idProducto <= 0) {
-        alert('ID de producto no válido');//SI EL ID ES NMENOR O 0, CORTA CON UN ALERT, ASI NO SE MANDA BASURA
+async function addToCart(id, cantidad = 1, nombre = 'Producto') {
+    const idProducto = Number(id);
+    const unidades = Number(cantidad);
+    if (!Number.isSafeInteger(idProducto) || idProducto <= 0 || !Number.isSafeInteger(unidades) || unidades < 1 || unidades > 9999) {
+        alert('Revisá el producto y la cantidad.');
         return;
     }
-
-    const datos = new FormData();
-    datos.append('id_producto', idProducto);
-    datos.append('cantidad', cantidad);//ES COMO LLENAR UN FORMULARIO SIN QUE SE VEA
-
     const base = window.BASE_URL || '';
-    const endpoint = `${base}/src/controllers/auth/carrito_controller.php`;
-
-    fetch(endpoint, {
-        method: 'POST',// PIDE ALGO A CARRITO CONTROLLERS SIN RECARGAR LA PAGINA
-        body: datos
-    })
-    .then(async response => {// LEE LAS RESPUESTAS COMO TEXTO
-        const text = await response.text();
-
-        if (!response.ok) {//SI EL SERVIDOR RESPONDIO CON ERRO, TIRA ERROR, SI NO INTNETA CONVERTIRLO EN JSON.PARSE
-            throw new Error(`Error en servidor (${response.status})`);
+    const endpoint = base + '/src/controllers/auth/carrito_controller.php';
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST', credentials: 'same-origin',
+            body: new URLSearchParams({id_producto: String(idProducto), cantidad: String(unidades)})
+        });
+        const data = await response.json();
+        if (response.status === 401) {
+            window.location.assign(base + '/src/views/auth/login.php');
+            return;
         }
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-            console.error('Respuesta no es JSON válido:', text);
-            throw new Error('El servidor devolvió un formato no válido.');
+        if (!response.ok || !data.success) throw new Error(data.message || 'No se pudo agregar el producto.');
+        const cartResponse = await fetch(endpoint, {credentials: 'same-origin', cache: 'no-store'});
+        const cart = await cartResponse.json();
+        if (cartResponse.ok && cart.success) {
+            cartCount = cart.productos.reduce((sum, item) => sum + Number(item.cantidad), 0);
+            if (cartButton) cartButton.textContent = 'Mi Carrito (' + cartCount + ')';
         }
-    })
-    .then(data => {//ACA YA TENES EL JSON. SI DATA.SECCESS ES VERDADERO, SUMA LA CANTIDADDEL BOTON  MI CARRITO
-        if (data.success) {
-            cartCount += cantidad;
-
-            if (cartButton) {
-                cartButton.textContent = `Mi Carrito (${cartCount})`;
-            }
-
-            showToast(nombre);
-        } else {
-            alert(data.message || 'No se pudo agregar el producto.');
-        }
-    })
-    .catch(error => {//AGARRA CUALQUIER FALLA Y AVISA
+        showToast(nombre);
+    } catch (error) {
         console.error('Error al agregar al carrito:', error);
-        alert('Ocurrió un error al agregar el producto.');
-    });
+        alert(error.message || 'No se pudo conectar con el carrito.');
+    }
 }
 
 /**
@@ -120,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // cartButton y toastContainer son variables globales (declaradas arriba,
     // fuera de este bloque) para que addToCart() pueda usarlas desde los
     // onclick="..." del HTML. Acá solo las inicializamos con el DOM ya listo.
-    cartButton = document.querySelector(".ms-lg-4 .btn-premium-red");
+    cartButton = document.getElementById("cartBtn");
 
     toastContainer = document.createElement("div");
     toastContainer.style.position = "fixed";

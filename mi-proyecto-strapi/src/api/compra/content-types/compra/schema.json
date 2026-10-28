@@ -28,6 +28,62 @@
       "relation": "oneToMany",
       "target": "api::detalle-compra.detalle-compra",
       "mappedBy": "compra"
+    },
+    "Estado": {
+      "type": "enumeration",
+      "enum": [
+        "Pendiente",
+        "Confirmado",
+        "Preparando",
+        "Enviado",
+        "Listo para retirar",
+        "Entregado",
+        "Retirado",
+        "Cancelado"
+      ]
+    },
+    "Metodo_entrega": {
+      "type": "enumeration",
+      "enum": [
+        "Retiro",
+        "Envio"
+      ]
+    },
+    "Metodo_pago": {
+      "type": "enumeration",
+      "enum": [
+        "A coordinar",
+        "Transferencia",
+        "Efectivo al retirar"
+      ]
+    },
+    "Estado_pago": {
+      "type": "enumeration",
+      "enum": [
+        "Pendiente",
+        "Pagado",
+        "Reembolsado"
+      ]
+    },
+    "Moneda": {
+      "type": "string",
+      "default": "ARS"
+    },
+    "Datos_cliente": {
+      "type": "json"
+    },
+    "Productos_comprados": {
+      "type": "json"
+    },
+    "Costo_envio": {
+      "type": "decimal",
+      "min": 0
+    },
+    "Seguimiento": {
+      "type": "string"
+    },
+    "Notas": {
+      "type": "text"
     }
   }
 }

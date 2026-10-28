@@ -1,11 +1,9 @@
 <?php
 // API del chatbot: independiente de MySQL para que el chat pueda seguir funcionando.
-session_start();//ABRE LA SESION. SE USA PARA IDENTIFICAR A CADA VISITANTE.
-header('Content-Type: application/json; charset=utf-8');//AVISA QUE LA RESPUESTA ES JSON
-header('Cache-Control: no-store');//EVITA QUE SE GUSRDE EN CACHE
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
-
-//FUNCION QUE MANDA EL JSON CON EL CODIGO HTTP Y CORTA CON EXIT. EVITA REPETIR CODIGO
 function responderChat(array $datos, int $estado = 200): void
 {
     http_response_code($estado);
@@ -13,21 +11,18 @@ function responderChat(array $datos, int $estado = 200): void
     exit;
 }
 
-//VALIDACION DEL METODO, SSI NO ES GET NI POST, DEVUELVE ERROR 405
 $metodo = $_SERVER['REQUEST_METHOD'];
 if (!in_array($metodo, ['GET', 'POST'], true)) {
     header('Allow: GET, POST');
     responderChat(['error' => 'Método no permitido.'], 405);
 }
-
-//IDENTIFICADORES
 $_SESSION['chat_id'] = $_SESSION['chat_id'] ?? bin2hex(random_bytes(24));
 $_SESSION['chat_token'] = $_SESSION['chat_token'] ?? bin2hex(random_bytes(32));
-$chatId = $_SESSION['chat_id']; //CREA EL ID Y EL TOKEN CON RANDOM_BYTES PARA QUE NO SE EPUEDA ADIVINAR
+$chatId = $_SESSION['chat_id'];
 
 try {
-    $db = new PDO('sqlite:' . __DIR__ . '/../../storage/chat.db');//ABRE CON PDO Y CREA TABLAS
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);// HACE QUE LOS ERRORES SALTEN CON EXCEPCIONES
+    $db = new PDO('sqlite:' . __DIR__ . '/../../storage/chat.db');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db->exec('PRAGMA busy_timeout = 5000');
     $db->exec("CREATE TABLE IF NOT EXISTS mensajes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +33,6 @@ try {
     )");
     $db->exec('CREATE INDEX IF NOT EXISTS mensajes_chat ON mensajes(chat_id, id)');
 
-    // SI EES GETTRAE LOS ULTIMOS 100 MENSAJES DE ESE CHAT_ID Y DEVUELVE JUNTO CON ELK TOKEN
     if ($metodo === 'GET') {
         // Mostrar los últimos 100 mensajes; el resto permanece guardado.
         $consulta = $db->prepare('SELECT remitente, mensaje, fecha FROM (SELECT id, remitente, mensaje, fecha FROM mensajes WHERE chat_id = ? ORDER BY id DESC LIMIT 100) ORDER BY id ASC');
@@ -46,21 +40,17 @@ try {
         responderChat(['mensajes' => $consulta->fetchAll(PDO::FETCH_ASSOC), 'token' => $_SESSION['chat_token']]);
     }
 
-    //SI ES POSTCHEQUEA QU EL TOKEN COINCIDA, SINO DA ERROR 403
     if (!is_string($_POST['token'] ?? null) || !hash_equals($_SESSION['chat_token'], $_POST['token'])) {
         responderChat(['error' => 'Recargá la página para volver a conectar el chat.'], 403);
     }
-    $mensaje = $_POST['mensaje'] ?? '';// VALIDA QUE EL MENSAJE SEA TEXTO ENTRE 1 Y 1000 CARACTERES, SINO DEVUIELVE ERROR
+    $mensaje = $_POST['mensaje'] ?? '';
     if (!is_string($mensaje) || !mb_check_encoding($mensaje, 'UTF-8') || trim($mensaje) === '' || mb_strlen($mensaje) > 1000) {
         responderChat(['error' => 'Escribí un mensaje de entre 1 y 1000 caracteres.'], 422);
     }
-    $mensaje = trim($mensaje);//NORMALIZA EL TEXTO:MINUSCULAS, SIN TILDE Y SIN SIGNOS DE PREGUNTA
+    $mensaje = trim($mensaje);
     $texto = strtr(mb_strtolower($mensaje, 'UTF-8'), ['á'=>'a', 'é'=>'e', 'í'=>'i', 'ó'=>'o', 'ú'=>'u', 'ü'=>'u', '¿'=>'', '?'=>'']);
     $respuesta = 'Todavía no tengo una respuesta para esa consulta. Puedo orientarte sobre catálogo, carrito, registro e historial. Probá con alguno de esos temas.';
-   
-    
     // Reglas del apunte, ampliadas con temas de la tienda. No se usa una API de IA.
-    //ES UN ARREGLO DE PATRON-->RESPUESTA
     $reglas = [
         '/\b(historial|conversacion|privacidad)\b/u' => 'Los mensajes se guardan con fecha y hora. Mientras conserves esta sesión, podés volver a ver los últimos 100 mensajes. No compartas contraseñas ni datos de pago.',
         '/\b(stock|disponibilidad|precio|precios)\b/u' => 'Consultá el catálogo y la ficha del producto para ver la información publicada. Este chat no consulta precios ni stock en tiempo real.',
@@ -73,20 +63,20 @@ try {
         '/\b(gracias)\b/u' => '¡De nada! Si necesitás ayuda con otra parte de la tienda, escribime.',
         '/\b(chau|adios|hasta luego)\b/u' => '¡Hasta luego! Gracias por visitar Multiventas Barvie.',
     ];
-    foreach ($reglas as $patron => $contenido) {//ROMPE LAS REGLAS CON PREG_MATCH. Y CON LA PRIMERA QUE COINCIDE GUARDA LA RESPUESTA Y HACE BREAK
+    foreach ($reglas as $patron => $contenido) {
         if (preg_match($patron, $texto)) {
             $respuesta = $contenido;
             break;
         }
     }
     // Guardar ambos mensajes juntos evita conversaciones incompletas.
-    $db->beginTransaction();//GUARDA EL MENSSAJE DEL USUARIO Y DEL BOT JUNTOS
+    $db->beginTransaction();
     $guardar = $db->prepare('INSERT INTO mensajes (chat_id, remitente, mensaje) VALUES (?, ?, ?)');
     $guardar->execute([$chatId, 'usuario', $mensaje]);
     $guardar->execute([$chatId, 'bot', $respuesta]);
     $db->commit();
     responderChat(['respuesta' => $respuesta]);
-} catch (Throwable $error) {//SI ALGO FALLA DESHASE LA TRANSACCION, REGISTRA EL ERROR Y DEVUELVE 503
+} catch (Throwable $error) {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
