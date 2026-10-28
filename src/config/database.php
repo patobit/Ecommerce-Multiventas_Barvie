@@ -7,7 +7,7 @@
  * Carga simple de variables desde un archivo .env (formato CLAVE=valor).
  * No depende de Composer ni de ninguna librería externa.
  */
-function cargarEnv(string $rutaArchivo): void
+function cargarEnv(string $rutaArchivo): void //LEE EL .ENV LINEA POR LINEA
 {
     if (!file_exists($rutaArchivo)) {
         return;
@@ -29,7 +29,7 @@ function cargarEnv(string $rutaArchivo): void
         $valor = trim($valor);
         $valor = trim($valor, "\"'"); // saca comillas si las tiene, ej: DB_PASSWORD="1234"
 
-        if (!isset($_ENV[$clave])) {
+        if (!isset($_ENV[$clave])) {//EVITA PISAR VARIABLES YA DEFINIDAS
             $_ENV[$clave] = $valor;
             putenv("{$clave}={$valor}");
         }

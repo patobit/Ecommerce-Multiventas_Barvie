@@ -41,28 +41,28 @@ function showToast(productName) {
  */
 function addToCart(id, cantidad = 1, nombre = 'Producto') {
     cantidad = parseInt(cantidad, 10) || 1;
-    const idProducto = parseInt(id, 10) || 0;
+    const idProducto = parseInt(id, 10) || 0;//CONVIERTE A NYUMEROS Y SI NO SE PUEDE DEJA 0
 
     if (idProducto <= 0) {
-        alert('ID de producto no válido');
+        alert('ID de producto no válido');//SI EL ID ES NMENOR O 0, CORTA CON UN ALERT, ASI NO SE MANDA BASURA
         return;
     }
 
     const datos = new FormData();
     datos.append('id_producto', idProducto);
-    datos.append('cantidad', cantidad);
+    datos.append('cantidad', cantidad);//ES COMO LLENAR UN FORMULARIO SIN QUE SE VEA
 
     const base = window.BASE_URL || '';
     const endpoint = `${base}/src/controllers/auth/carrito_controller.php`;
 
     fetch(endpoint, {
-        method: 'POST',
+        method: 'POST',// PIDE ALGO A CARRITO CONTROLLERS SIN RECARGAR LA PAGINA
         body: datos
     })
-    .then(async response => {
+    .then(async response => {// LEE LAS RESPUESTAS COMO TEXTO
         const text = await response.text();
 
-        if (!response.ok) {
+        if (!response.ok) {//SI EL SERVIDOR RESPONDIO CON ERRO, TIRA ERROR, SI NO INTNETA CONVERTIRLO EN JSON.PARSE
             throw new Error(`Error en servidor (${response.status})`);
         }
         try {
@@ -72,7 +72,7 @@ function addToCart(id, cantidad = 1, nombre = 'Producto') {
             throw new Error('El servidor devolvió un formato no válido.');
         }
     })
-    .then(data => {
+    .then(data => {//ACA YA TENES EL JSON. SI DATA.SECCESS ES VERDADERO, SUMA LA CANTIDADDEL BOTON  MI CARRITO
         if (data.success) {
             cartCount += cantidad;
 
@@ -85,7 +85,7 @@ function addToCart(id, cantidad = 1, nombre = 'Producto') {
             alert(data.message || 'No se pudo agregar el producto.');
         }
     })
-    .catch(error => {
+    .catch(error => {//AGARRA CUALQUIER FALLA Y AVISA
         console.error('Error al agregar al carrito:', error);
         alert('Ocurrió un error al agregar el producto.');
     });

@@ -1,16 +1,17 @@
 <?php
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/../../config/rutas.php';
-require_once __DIR__ . '/../../config/strapi_client.php';
+require_once __DIR__ . '/../../config/strapi_client.php';//TRAE LOS ARCHIVOS DE CONFIGURACION
 
 // Asegurar que la sesión esté iniciada
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE) { //ES UNA DOBLE SEGURIDAD
     session_start();
 }
 
 // Paso clave #1: Validar tipo de solicitud (Solo POST) ----------
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+    //SI ALGUIEN ENTRA AL CONTROLLER USANDO GET, LO MANDARIA DEVUELTA AL FORMULARIO
     exit;
 }
 
@@ -21,7 +22,7 @@ $password = $_POST['password'] ?? '';
 if ($email === '' || $password === '') {
     $_SESSION['error_login'] = 'Completá email y contraseña.';
     header('Location: ' . BASE_URL . '/src/views/auth/login.php');
-    exit;
+    exit;// SI FALTA ALGUN DATO TE MANDA ESE MENSAJE 
 }
 
 // Paso clave #3: Autenticar contra Strapi (Users & Permissions) -
@@ -29,7 +30,7 @@ if ($email === '' || $password === '') {
 // el email. Antes esto buscaba en una tabla local `usuarios` con PDO.
 $resultado = strapiRequest('POST', 'auth/local', [], [
     'identifier' => $email,
-    'password'   => $password,
+    'password'   => $password,// LLAMA A STRAPI DESDE EL SERVIDOR Y ESTE GUARDA LOS DATOS Y LOS VERIFICA
 ]);
 
 if (!$resultado['ok']) {
@@ -37,11 +38,13 @@ if (!$resultado['ok']) {
   // como si la contraseña está mal, así que no hace falta distinguir acá.
   $_SESSION['error_login'] = 'Email o contraseña incorrectos.';
   header('Location: ' . BASE_URL . '/src/views/auth/login.php');
+  // SI STRAPI DICE no, SE MUESTRA UN ERROR GENERICO
+  //EVITA ENUMERACION DE MUCHOS USUARIOS 
   exit;
 }
 
 $jwt  = $resultado['data']['jwt'] ?? null;
-$user = $resultado['data']['user'] ?? null;
+$user = $resultado['data']['user'] ?? null;// SI FALTA UNO DE ESTOS VA A DARA ERROR Y VOLVER AL LOGIN
 
 if (!$jwt || !$user) {
   $_SESSION['error_login'] = 'Error al iniciar sesión. Intentá de nuevo.';
@@ -51,5 +54,5 @@ if (!$jwt || !$user) {
 
 guardarSesionUsuario($user, $jwt);
 
-header('Location: ' . BASE_URL . '/index.php');
+header('Location: ' . BASE_URL . '/index.php');// GUARDA AL USUARIO EN LA SESION Y LO MANDA AL INICIO
 exit;

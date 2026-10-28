@@ -8,22 +8,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../config/rutas.php';
 require_once __DIR__ . '/../../controllers/auth/productos_controller.php';
-require_once __DIR__ . '/../../controllers/auth/carrito.php';
 
 $categoriasNavbar = obtenerCategorias(null); // categorías principales
 
-// Contador del botón "Mi Carrito". Antes usaba un id_usuario=2 "temporal";
-// ahora que el login es real, si no hay nadie logueado el contador queda en 0
-// (no tiene sentido pedirle el carrito a Strapi sin un usuario autenticado).
-$cantidadCarrito = 0;
-if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
-    try {
-    $resultadoCarrito = obtenerProductosDelCarrito($_SESSION['usuario']['jwt'], (int) $_SESSION['usuario']['id']);
-    foreach ($resultadoCarrito['productos'] as $producto) {
-        $cantidadCarrito += (int) $producto['cantidad'];
-    }
-    } catch (RuntimeException $e) { error_log($e->getMessage()); }
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -36,7 +23,7 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
     <link href="<?= BASE_URL ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../assets/css/style.css') ?>" rel="stylesheet">
 </head>
 
-<body class="<?= !empty($isHomePage) ? 'mvb-home' : (!empty($isCatalogPage) ? 'mvb-catalog-page' : '') ?>">
+<body class="<?= !empty($isHomePage) ? 'mvb-home' : (!empty($isCatalogPage) ? 'mvb-catalog-page' : (!empty($isOrdersPage) ? 'mvb-orders-page' : '')) ?>">
 
     <!-- Header / Navbar -->
     <header class="mvb-site-header">
@@ -48,10 +35,10 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                     <img class="mvb-nav-logo" src="<?= BASE_URL ?>/assets/img/logo.jpg" alt="MVB · Multiventas Barvie" width="76" height="76"><span class="mvb-nav-name">MVB<small>MULTIVENTAS BARVIE</small></span>
                 </a>
                 <div class="flex-grow-1 mx-lg-4 my-2 my-lg-0 order-3 order-lg-0 position-relative" id="searchWrapper">
-                    <form class="d-flex" role="search" id="<?= !empty($isHomePage) || !empty($isCatalogPage) ? 'catalogSearchForm' : 'searchForm' ?>" method="GET" action="<?= BASE_URL ?>/src/views/catalogo.php">
-                        <?php if (!empty($isCatalogPage) && isset($categoriaId)): ?><input type="hidden" name="categoria" value="<?= (int)$categoriaId ?>"><?php endif; ?>
+                    <label class="mvb-global-search-label" for="searchInput">Buscar en toda la tienda</label>
+                    <form class="d-flex" role="search" id="<?= !empty($isHomePage) || !empty($isCatalogPage) || !empty($isAuthPage) ? 'catalogSearchForm' : 'searchForm' ?>" method="GET" action="<?= BASE_URL ?>/src/views/catalogo.php">
                         <div class="input-group">
-                            <input type="search" class="form-control form-control-premium border-end-0" id="searchInput" name="buscar" value="<?= !empty($isCatalogPage) ? htmlspecialchars($busqueda ?? '') : '' ?>" placeholder="Buscar productos, marcas y más..." aria-label="Buscar" autocomplete="off">
+                            <input type="search" class="form-control form-control-premium border-end-0" id="searchInput" name="buscar" value="<?= !empty($isCatalogPage) ? htmlspecialchars($busqueda ?? '') : '' ?>" placeholder="Buscar productos, marcas y más..." aria-label="Buscar en toda la tienda" autocomplete="off">
                             <button class="btn btn-premium-red px-3" type="submit" id="searchBtn" aria-label="Buscar">
                                 🔍
                             </button>
@@ -81,11 +68,6 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                         <li class="nav-item"><a class="nav-link text-secondary" href="<?= BASE_URL ?>/index.php#como-empezar">Conocé MVB</a></li>
                     </ul>
                     <div class="ms-lg-4 d-flex align-items-center gap-2">
-                        <a href="<?= BASE_URL ?>/src/views/carrito.php"
-                           class="btn btn-premium-red btn-sm px-3 py-2 fw-semibold"
-                           id="cartBtn">
-                            Mi Carrito (<?= $cantidadCarrito ?>)
-                        </a>
 
                         <!-- Detección de Usuario / Sesión -->
                         <?php if (isset($_SESSION['usuario_id']) || isset($_SESSION['nombre'])): ?>
@@ -96,7 +78,6 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
                                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userMenu">
                                     <li class="mvb-menu-caption">TU CUENTA MVB</li>
                                     <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/user/profile.php">Mi perfil ↗</a></li>
-                                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/src/views/carrito.php">Mi carrito ↗</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/src/controllers/auth/logout.php">Cerrar Sesión</a></li>
                                 </ul>
@@ -112,7 +93,7 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
             </div>
         </nav>
 
-        <?php if (empty($isHomePage) && empty($isCatalogPage) && basename($_SERVER['PHP_SELF']) !== 'carrito.php'): ?>
+        <?php if (empty($isHomePage) && empty($isCatalogPage) && empty($isAuthPage) && empty($isOrdersPage)): ?>
         <!-- Hero Section -->
         <div class="container py-5">
             <div class="row align-items-center g-5">

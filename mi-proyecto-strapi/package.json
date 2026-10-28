@@ -19,13 +19,13 @@
     "@strapi/plugin-cloud": "5.52.3",
     "@strapi/plugin-users-permissions": "5.52.3",
     "@strapi/strapi": "5.52.3",
+    "better-sqlite3": "^13.0.3",
     "mysql2": "3.20.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.30.3",
     "styled-components": "^6.0.0"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=20.0.0 <=26.x.x",
     "npm": ">=6.0.0"
