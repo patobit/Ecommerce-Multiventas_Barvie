@@ -263,7 +263,7 @@ foreach ($productos as $producto) {
 
 
 <script type="module">
-import { actualizarCantidad, eliminarDelCarrito, finalizarCompra } from "../../assets/js/carrito.js"
+import { actualizarCantidad, eliminarDelCarrito } from "../../assets/js/carrito.js"
 
 document.getElementById('cartItems').addEventListener('click', async (e) => {
     const item = e.target.closest('.cart-item');
@@ -293,30 +293,6 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
         const resultado = await actualizarCantidad(idDetalle, nuevaCantidad);
         resultado.success ? location.reload() : alert(resultado.message);
     }
-});
-
-const form = document.getElementById('checkoutForm');
-const entrega = document.getElementById('pedido-entrega');
-const direccion = document.getElementById('pedido-direccion');
-entrega.addEventListener('change', () => {
-    const envio = entrega.value === 'Envio';
-    direccion.hidden = !envio;
-    document.getElementById('cartShipping').textContent = envio ? 'A confirmar' : '$0,00';
-    direccion.querySelectorAll('input').forEach(input => input.required = envio);
-    const efectivo = document.querySelector('#pedido-pago option[value="Efectivo al retirar"]');
-    efectivo.disabled = envio;
-    if (envio && document.getElementById('pedido-pago').value === 'Efectivo al retirar') document.getElementById('pedido-pago').value = 'A coordinar';
-});
-form.addEventListener('submit', async event => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    const button = document.getElementById('btnFinalizarCompra');
-    const status = document.getElementById('checkout-status');
-    button.disabled = true;
-    status.textContent = 'Guardando pedido…';
-    const resultado = await finalizarCompra(Object.fromEntries(new FormData(form)));
-    if (resultado.success) location.href = window.BASE_URL + '/src/views/user/pedidos.php';
-    else {status.textContent = resultado.message; button.disabled = false;}
 });
 
 </script>
