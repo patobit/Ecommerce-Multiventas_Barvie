@@ -219,11 +219,52 @@ function obtenerDetallePropio(string $jwt, int $idUsuario, int $idDetalleCarrito
  * Convierte el carrito activo del usuario en una compra: crea la Compra,
  * copia cada línea a detalle-compras, y cierra el carrito.
  */
-// ESTUDIO finalizarCompra: Consulta el carrito y delega el checkout al endpoint de pedidos de Strapi.
-function finalizarCompra(string $jwt, int $idUsuario, array $datos): array
+function finalizarCompra(string $jwt, int $idUsuario): array
 {
-    $result = strapiRequest('POST', 'mis-pedidos/checkout', [], $datos, $jwt);
-    if (!$result['ok']) return ['success' => false, 'message' => $result['error'] ?? 'No se pudo guardar el pedido.'];
-    return ['success' => true, 'message' => 'Pedido guardado. El pago y la entrega están pendientes de confirmación.',
-        'id_compra' => $result['data']['data']['documentId'] ?? null];
+    $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
+    $productos = $resultado['productos'] ?? [];
+
+    if (empty($productos)) {
+        return ['success' => false, 'message' => 'Tu carrito está vacío.'];
+    }
+
+    $idCarrito = $resultado['id_carrito'];
+    $total     = $resultado['total'];
+
+    // 1. Crear la compra
+    $compraResultado = strapiRequest('POST', 'compras', [], [
+        'data' => [
+            'Fecha'                   => date('c'),
+            'Total'                   => $total,
+            'users_permissions_user'  => $idUsuario,
+        ],
+    ], $jwt);
+
+    if (!$compraResultado['ok']) {
+        return ['success' => false, 'message' => 'Error al crear la compra: ' . ($compraResultado['error'] ?? '')];
+    }
+    $idCompra = $compraResultado['data']['data']['documentId'];
+
+    // 2. Copiar cada línea del carrito a detalle-compras
+    foreach ($productos as $producto) {
+        $linea = strapiRequest('POST', 'detalle-compras', [], [
+            'data' => [
+                'Cantidad'        => $producto['cantidad'],
+                'Precio_unitario' => $producto['precio'],
+                'compra'          => $idCompra,
+                'producto'        => $producto['producto_document_id'],
+            ],
+        ], $jwt);
+        if (!$linea['ok']) {
+            return ['success' => false, 'message' => 'No se pudo completar la compra. Contactá a la tienda antes de reintentar.'];
+        }
+    }
+
+    // Cerrar el carrito conservando sus líneas como historial.
+    $cierre = strapiRequest('PUT', 'carritos/' . $idCarrito, [], [
+        'data' => ['Estado' => 'Convertido', 'compra' => $idCompra],
+    ], $jwt);
+
+    if (!$cierre['ok']) return ['success' => false, 'message' => 'No se pudo cerrar la compra. Contactá a la tienda.'];
+    return ['success' => true, 'message' => '¡Compra realizada con éxito!', 'id_compra' => $idCompra];
 }

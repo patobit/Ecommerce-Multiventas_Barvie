@@ -9,7 +9,7 @@
 require_once __DIR__ . '/database.php';
 
 if (!defined('STRAPI_URL')) {
-    define('STRAPI_URL', rtrim(getenv('STRAPI_URL') ?: 'http://localhost:1337', '/')); // Sin barra al final
+    define('STRAPI_URL', rtrim(getenv('STRAPI_URL') ?: 'https://mvb-0ina.onrender.com/', '/')); // Sin barra al final
 }
 
 /**

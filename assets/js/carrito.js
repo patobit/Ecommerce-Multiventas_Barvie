@@ -1,5 +1,6 @@
 // Detecta la ruta base del proyecto de forma dinámica
 const BASE_URL = window.BASE_URL || window.location.pathname.substring(0, window.location.pathname.indexOf('/src'));
+const ENDPOINT = new URL('../../src/controllers/auth/carrito_controller.php', import.meta.url).href;
 
 let cartCount = 0;
 const cartButton = document.getElementById('cartBtn');
@@ -79,34 +80,34 @@ export function addToCart(id, cantidad = 1, nombre = 'Producto') {
         alert('Ocurrió un error al agregar el producto.');
     });
 }
-export async function actualizarCantidad(idDetalleCarrito, nuevaCantidad) {
-    const endpoint = `${BASE_URL}/src/controllers/auth/carrito_controller.php`;
+
+async function pedir(method, body) {
     try {
-        const res = await fetch(endpoint, {
-            method: 'PUT',
+        const res = await fetch(ENDPOINT, {
+            method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_detalle_carrito: idDetalleCarrito, cantidad: nuevaCantidad })
+            body: JSON.stringify(body)
         });
-        return await res.json();
+        const text = await res.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Respuesta no válida:', text);
+            const limpio = text.replace(/<[^>]*>/g, '').trim().slice(0, 300);
+            return { success: false, message: "Respuesta 'inesperada (HTTP" + res.status + "): " + limpio };
+        }
     } catch (error) {
-        console.error('Error al actualizar la cantidad:', error);
+        console.error('Error de red:', error);
         return { success: false, message: 'Error de conexión.' };
     }
 }
 
-export async function eliminarDelCarrito(idDetalleCarrito) {
-    const endpoint = `${BASE_URL}/src/controllers/auth/carrito_controller.php`;
-    try {
-        const res = await fetch(endpoint, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_detalle_carrito: idDetalleCarrito })
-        });
-        return await res.json();
-    } catch (error) {
-        console.error('Error al eliminar el producto:', error);
-        return { success: false, message: 'Error de conexión.' };
-    }
+export function actualizarCantidad(idDetalleCarrito, nuevaCantidad) {
+    return pedir('POST', { accion: 'actualizar', id_detalle_carrito: idDetalleCarrito, cantidad: nuevaCantidad });
+}
+
+export function eliminarDelCarrito(idDetalleCarrito) {
+    return pedir('POST', { accion: 'eliminar', id_detalle_carrito: idDetalleCarrito });
 }
 
 export async function finalizarCompra(datos) {

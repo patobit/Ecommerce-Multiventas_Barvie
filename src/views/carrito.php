@@ -231,24 +231,20 @@ foreach ($productos as $producto) {
                 </div>
 
 
-<form id="checkoutForm" class="checkout-form">
-<input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['checkout_csrf']) ?>">
-<input type="hidden" name="carrito" value="<?= htmlspecialchars($resultado['id_carrito'] ?? '') ?>">
-<h2 class="h5 text-white mb-3">Datos del pedido</h2>
-<label for="pedido-entrega">Entrega</label><select id="pedido-entrega" name="entrega" class="form-select form-control-premium" required><option value="Retiro">Retiro en la tienda</option><option value="Envio">Envío a domicilio</option></select>
-<label for="pedido-pago">Método de pago</label><select id="pedido-pago" name="pago" class="form-select form-control-premium" required><option value="A coordinar">A coordinar con la tienda</option><option value="Transferencia">Transferencia bancaria</option><option value="Efectivo al retirar">Efectivo al retirar</option></select>
-<label for="pedido-nombre">Nombre de quien recibe o retira</label><input id="pedido-nombre" name="nombre" class="form-control form-control-premium" required maxlength="254" autocomplete="name" value="<?= htmlspecialchars(trim(($_SESSION['usuario']['nombre'] ?? '') . ' ' . ($_SESSION['usuario']['apellido'] ?? ''))) ?>">
-<label for="pedido-telefono">Teléfono de contacto</label><input id="pedido-telefono" type="tel" name="telefono" class="form-control form-control-premium" required maxlength="40" autocomplete="tel" value="<?= htmlspecialchars($_SESSION['usuario']['telefono'] ?? '') ?>">
-<div id="pedido-direccion" hidden>
-<label for="pedido-calle">Calle y número</label><input id="pedido-calle" name="direccion" class="form-control form-control-premium" maxlength="254" autocomplete="street-address">
-<label for="pedido-ciudad">Ciudad</label><input id="pedido-ciudad" name="ciudad" class="form-control form-control-premium" maxlength="254" autocomplete="address-level2">
-<label for="pedido-provincia">Provincia</label><input id="pedido-provincia" name="provincia" class="form-control form-control-premium" maxlength="254" autocomplete="address-level1">
-<label for="pedido-cp">Código postal</label><input id="pedido-cp" name="codigo_postal" class="form-control form-control-premium" maxlength="20" autocomplete="postal-code">
-<p class="small text-secondary">El costo del envío se confirma con la tienda.</p></div>
-<label for="pedido-notas">Indicaciones (opcional)</label><textarea id="pedido-notas" name="notas" class="form-control form-control-premium" maxlength="1000" rows="2"></textarea>
-<p class="small text-secondary mt-3">Se guarda tu pedido; este formulario no cobra ni solicita datos de tarjeta.</p>
-<button type="submit" class="btn btn-premium-red w-100 fw-semibold" id="btnFinalizarCompra" <?= empty($productos) ? 'disabled' : '' ?>>Confirmar pedido</button>
-<p id="checkout-status" role="status" class="small mt-3 mb-0"></p></form>
+                <!-- FINALIZAR COMPRA -->
+                <?php if (!empty($productos)): ?>
+                <form method="post" action="<?= BASE_URL ?>/src/views/compra_finalizada.php">
+                    <button type="submit" class="btn btn-premium-red w-100 fw-semibold">
+                         Finalizar compra
+                    </button>
+                </form>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
+                         Finalizar compra
+                        </button>
+                    <?php endif; ?>
+
+
                 <!-- SEGUIR COMPRANDO -->
                 <a
                     href="<?= BASE_URL ?>/src/views/catalogo.php"

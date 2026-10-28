@@ -3,6 +3,7 @@
 // ENDPOINT PHP: recibe fetch del navegador. La sesion identifica al usuario y aporta su JWT. POST agrega, GET lista, PUT cambia cantidad y DELETE elimina. Devuelve JSON.
 
 header('Content-Type: application/json; charset=utf-8');
+ini_set('display_errors', '0');
 set_exception_handler(function (Throwable $e) {
     error_log($e->getMessage());
     http_response_code($e->getCode() === 401 ? 401 : 502);
@@ -29,6 +30,28 @@ $jwt       = $_SESSION['usuario']['jwt'];
 // AGREGAR PRODUCTO AL CARRITO
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inputData = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    $accion = $inputData['accion'] ?? 'agregar';
+
+    if ($accion === 'actualizar') {
+        $idDetalle = (int) ($inputData['id_detalle_carrito'] ?? 0);
+        $cant      = (int) ($inputData['cantidad'] ?? 0);
+        if ($idDetalle <= 0 || $cant <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Datos inválidos.']);
+            exit;
+        }
+        echo json_encode(actualizarCantidadEnCarrito($jwt, $idUsuario, $idDetalle, $cant));
+        exit;
+    }
+
+    if ($accion === 'eliminar') {
+        $idDetalle = (int) ($inputData['id_detalle_carrito'] ?? 0);
+        if ($idDetalle <= 0) {
+            echo json_encode(['success' => false, 'message' => 'ID de producto inválido.']);
+            exit;
+        }
+        echo json_encode(eliminarProductoDelCarrito($jwt, $idUsuario, $idDetalle));
+        exit;
+    }
 
     $id_producto = isset($inputData['id_producto']) ? (int) $inputData['id_producto'] : 0;
     $cantidad    = isset($inputData['cantidad'])    ? (int) $inputData['cantidad']    : 1;
