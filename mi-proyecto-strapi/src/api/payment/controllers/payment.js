@@ -15,9 +15,9 @@ module.exports = {
         body: {
           items: items, // Array de objetos: [{ id, title, quantity, unit_price }]
           back_urls: {
-            success: 'https://tu-dominio-en-infinityfree.com/checkout/success',
-            failure: 'https://tu-dominio-en-infinityfree.com/checkout/failure',
-            pending: 'https://tu-dominio-en-infinityfree.com/checkout/pending'
+            success: 'https://mvb.page.gd/checkout/success',
+            failure: 'https://mvb.page.gd/checkout/failure',
+            pending: 'https://mvb.page.gd/checkout/pending'
           },
           auto_return: 'approved',
           // URL de tu Strapi en Render para recibir notificaciones en segundo plano

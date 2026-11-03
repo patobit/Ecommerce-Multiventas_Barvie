@@ -268,3 +268,49 @@ function finalizarCompra(string $jwt, int $idUsuario): array
     if (!$cierre['ok']) return ['success' => false, 'message' => 'No se pudo cerrar la compra. Contactá a la tienda.'];
     return ['success' => true, 'message' => '¡Compra realizada con éxito!', 'id_compra' => $idCompra];
 }
+
+/**
+ * Inicia el proceso de pago con Mercado Pago enviando los ítems 
+ * al endpoint personalizado de Strapi.
+ */
+function iniciarPagoMercadoPago(string $jwt, int $idUsuario): array
+{
+    // 1. Obtener los productos actuales del carrito
+    $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
+    $productos = $resultado['productos'] ?? [];
+
+    if (empty($productos)) {
+        return ['success' => false, 'message' => 'Tu carrito está vacío.'];
+    }
+
+    // 2. Mapear los productos al formato que espera Mercado Pago
+    $itemsMP = [];
+    foreach ($productos as $prod) {
+        $itemsMP[] = [
+            'id' => (string) $prod['id_producto'],
+            'title' => $prod['nombre'],
+            'quantity' => (int) $prod['cantidad'],
+            'unit_price' => (float) $prod['precio']
+        ];
+    }
+
+    // 3. Hacer la petición a tu nuevo endpoint custom en Strapi
+    // Reutilizamos tu función strapiRequest. Asegúrate de que la ruta coincida con la que creaste.
+    $respuestaMP = strapiRequest('POST', 'payments/create-preference', [], [
+        'items' => $itemsMP
+    ], $jwt);
+
+    // 4. Procesar la respuesta
+    if (!$respuestaMP['ok'] || !isset($respuestaMP['data']['init_point'])) {
+        return [
+            'success' => false, 
+            'message' => 'Error al conectar con Mercado Pago.'
+        ];
+    }
+
+    // 5. Devolver la URL de pago para que el frontend (JS o PHP) redirija al usuario
+    return [
+        'success' => true,
+        'init_point' => $respuestaMP['data']['init_point']
+    ];
+}
