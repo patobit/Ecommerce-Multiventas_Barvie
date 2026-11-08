@@ -21,7 +21,18 @@ const deniedTypes = [
   'application/x-mach-binary',
 ];
 
-module.exports = () => ({
+module.exports = ({ env }) => {
+  const cloudinary = {
+    cloud_name: env('CLOUDINARY_NAME'),
+    api_key: env('CLOUDINARY_KEY'),
+    api_secret: env('CLOUDINARY_SECRET'),
+  };
+  const hasCloudinary = Object.values(cloudinary).every(Boolean);
+  if (!hasCloudinary && env('NODE_ENV') === 'production') {
+    throw new Error('Configure CLOUDINARY_NAME, CLOUDINARY_KEY and CLOUDINARY_SECRET before uploading production media.');
+  }
+
+  return {
   'users-permissions': {
     config: {
       jwtManagement: 'legacy-support',
@@ -34,10 +45,16 @@ module.exports = () => ({
   },
   upload: {
     config: {
+      ...(hasCloudinary ? {
+        provider: 'cloudinary',
+        providerOptions: cloudinary,
+        actionOptions: { upload: {}, uploadStream: {}, delete: {} },
+      } : {}),
       security: {
         allowedTypes: allowedMediaTypes,
         deniedTypes,
       },
     },
   },
-});
+  };
+};
