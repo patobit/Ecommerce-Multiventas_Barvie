@@ -14,6 +14,7 @@ require_once __DIR__ . '/productos_card.php';                       // renderPro
 $categoriaId = isset($_GET['categoria']) ? (int) $_GET['categoria'] : null;
 $busqueda = isset($_GET['buscar']) ? trim($_GET['buscar']) : '';
 
+$todosProductos = obtenerTodosLosProductos();
 $todasCategorias = obtenerArbolCategorias();
 $porPadre = [];
 foreach ($todasCategorias as $cat) $porPadre[(int)($cat['id_categoria_padre'] ?? 0)][] = $cat;
@@ -27,12 +28,14 @@ while ($pendientes) {
     $idsCategoria[] = $id;
     foreach ($porPadre[$id] ?? [] as $hija) $pendientes[] = (int)$hija['id_categoria'];
 }
-$productos = array_values(array_filter(obtenerTodosLosProductos(), function($p) use ($categoriaId, $idsCategoria, $busqueda) {
+$productos = array_values(array_filter($todosProductos, function($p) use ($categoriaId, $idsCategoria, $busqueda) {
     if ($categoriaId !== null && !in_array((int)$p['id_categoria'], $idsCategoria, true)) return false;
     $texto = ($p['nombre'] ?? '') . ' ' . ($p['descripcion'] ?? '') . ' ' . ($p['marca'] ?? '');
     $termino = strtolower(trim($busqueda)) === 'revigal' ? 'revi' : $busqueda;
     return $termino === '' || mb_stripos($texto, $termino) !== false;
 }));
+$orden = in_array($_GET['orden'] ?? '', ['precio-asc', 'precio-desc'], true) ? $_GET['orden'] : 'nombre';
+if ($orden !== 'nombre') usort($productos, fn($a, $b) => $orden === 'precio-asc' ? $a['precio'] <=> $b['precio'] : $b['precio'] <=> $a['precio']);
 $enlaceCategoria = function($id) use ($busqueda) {
     $params = [];
     if ($id !== null) $params['categoria'] = $id;
@@ -55,12 +58,13 @@ $isCatalogPage = true;
 require_once __DIR__ . '/_layouts/header.php';
 ?>
     <!-- Catálogo -->
-    <main class="container my-5 mvb-catalog">
+    <main id="contenido" class="container my-5 mvb-catalog">
 
-        <div class="catalog-banner" aria-label="Accesorios, limpieza y herramientas">
-            <div><span>MULTIVENTAS BARVIE</span><h2>Cuidá cada detalle.</h2><p>Accesorios, limpieza y herramientas para tu vehículo.</p></div>
-            <img src="<?= BASE_URL ?>/assets/img/limpieza-productos/re551/re551_01.png" alt="Producto para limpieza vehicular" width="160" height="180">
-            <img src="<?= BASE_URL ?>/assets/img/herramientas-y-elevacion/ll-013/ll-013_01.png" alt="Juego de herramientas" width="200" height="180">
+        <div class="catalog-banner" aria-label="Nuestro catálogo">
+            <div><span>MVB MULTIVENTAS</span><h2>Todo para tu próximo detalle.</h2><p>Elegí entre limpieza, accesorios y herramientas para tu vehículo.</p></div>
+            <?php foreach (array_slice(array_values(array_filter($todosProductos, fn($p) => !empty($p['imagenes']))), 0, 2) as $bannerProduct): ?>
+            <img src="<?= htmlspecialchars(imagenCatalogo($bannerProduct['imagenes'][0], 360)) ?>" alt="<?= htmlspecialchars($bannerProduct['nombre']) ?>" width="180" height="180" decoding="async">
+            <?php endforeach; ?>
         </div>
         <nav class="catalog-breadcrumb" aria-label="Ubicación"><a href="<?= BASE_URL ?>/index.php">Inicio</a> / <a href="<?= BASE_URL ?>/src/views/catalogo.php">Productos</a><?php if ($categoriaActual): ?> / <?= htmlspecialchars($categoriaActual['nombre']) ?><?php endif; ?></nav>
         <div class="catalog-layout">
@@ -96,12 +100,14 @@ require_once __DIR__ . '/_layouts/header.php';
             </form>
         </div>
 
-        <?php if (!empty($productos)): ?>
+        <?php if (catalogoNoDisponible()): ?>
+            <div class="mvb-loading-notice" role="status"><strong>El catálogo está tardando en responder.</strong><p>No pudimos comprobar todos los productos. Volvé a intentar en unos instantes.</p><a href="<?= htmlspecialchars($_SERVER['REQUEST_URI'], ENT_QUOTES, 'UTF-8') ?>">Volver a intentar ↻</a></div>
+        <?php elseif (!empty($productos)): ?>
 
             <!-- ============================================================
                  VISTA: PRODUCTOS (de una categoría hoja, o de una búsqueda)
                  ============================================================ -->
-            <p class="catalog-result-count"><?= count($productos) ?> producto<?= count($productos) === 1 ? '' : 's' ?></p>
+            <div class="mvb-results-toolbar"><p class="catalog-result-count"><?= count($productos) ?> producto<?= count($productos) === 1 ? '' : 's' ?></p><form method="GET" class="mvb-sort-form"><?php if ($categoriaId !== null): ?><input type="hidden" name="categoria" value="<?= $categoriaId ?>"><?php endif; ?><?php if ($busqueda !== ''): ?><input type="hidden" name="buscar" value="<?= htmlspecialchars($busqueda) ?>"><?php endif; ?><label for="product-sort">Ordenar por</label><select id="product-sort" name="orden"><option value="nombre" <?= $orden === 'nombre' ? 'selected' : '' ?>>Nombre</option><option value="precio-asc" <?= $orden === 'precio-asc' ? 'selected' : '' ?>>Menor precio</option><option value="precio-desc" <?= $orden === 'precio-desc' ? 'selected' : '' ?>>Mayor precio</option></select><button type="submit">Aplicar</button></form></div>
             <div class="row g-4 catalog-product-grid">
                 <?php foreach ($productos as $p): ?>
                     <?= renderProductCard($p) ?>

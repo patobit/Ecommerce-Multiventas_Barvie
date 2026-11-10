@@ -33,6 +33,10 @@ function strapiRequest(string $method, string $endpoint, array $query = [], ?arr
         $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
+    static $publicReads = [];
+    $memoKey = strtoupper($method) === 'GET' && $token === null && in_array($endpoint, ['productos', 'categorias'], true) ? $url : null;
+    if ($memoKey !== null && isset($publicReads[$memoKey])) return $publicReads[$memoKey];
+
     $headers = ['Accept: application/json'];
     if ($token) {
         $headers[] = 'Authorization: Bearer ' . $token;
@@ -80,5 +84,7 @@ function strapiRequest(string $method, string $endpoint, array $query = [], ?arr
     if ($httpCode !== 204 && !is_array($decoded)) {
         return ['ok' => false, 'status' => $httpCode, 'data' => null, 'error' => 'Strapi devolvió una respuesta inválida.'];
     }
-    return ['ok' => true, 'status' => $httpCode, 'data' => is_array($decoded) ? $decoded : null, 'error' => null];
+    $result = ['ok' => true, 'status' => $httpCode, 'data' => is_array($decoded) ? $decoded : null, 'error' => null];
+    if ($memoKey !== null) $publicReads[$memoKey] = $result;
+    return $result;
 }

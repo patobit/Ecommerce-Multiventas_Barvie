@@ -1,14 +1,9 @@
-<!-- Footer Premium -->
-    <footer id="como-empezar" class="mvb-footer mvb-footer-minimal mt-5">
-        <div class="mvb-wide">
-            <p class="mvb-footer-wordmark"><strong>MVB</strong><span aria-hidden="true"> | </span>Multiventas Barvie</p>
-            <p class="mvb-footer-tagline">Tu auto. Tu estilo. Tu próximo detalle.</p>
-            <div class="mvb-footer-socials" aria-label="Redes y contacto de MVB">
-                <a class="mvb-social-whatsapp" href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/whatsapp.png" alt="" width="32" height="32">WhatsApp ↗</a>
-                <a class="mvb-social-instagram" href="https://www.instagram.com/mv.barvie/" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/instagram.png" alt="" width="32" height="32">Instagram ↗</a>
-                <a class="mvb-social-mercadolibre" href="https://listado.mercadolibre.com.ar/_CustId_1356852917?item_id=MLA3791842558&amp;category_id=MLA414035&amp;seller_id=1356852917&amp;client=recoview-selleritems&amp;recos_listing=true#origin=upp&amp;component=sellerData&amp;typeSeller=classic" target="_blank" rel="noopener noreferrer"><img src="<?= BASE_URL ?>/assets/img/mercadolibre.png" alt="" width="44" height="32">Mercado Libre ↗</a>
-            </div>
-        </div>
+    <footer id="como-empezar" class="mvb-footer mt-5">
+        <div class="mvb-wide mvb-footer-grid">
+            <div><a href="<?= BASE_URL ?>/index.php"><img class="mvb-footer-logo" src="<?= BASE_URL ?>/assets/img/mvb-logo-aprobado.png" alt="MVB Multiventas" width="180" height="90" loading="lazy"></a><p>Tu auto. Tu estilo. Tu próximo detalle.</p></div>
+            <nav aria-label="La tienda"><h2>Explorá MVB</h2><a href="<?= BASE_URL ?>/src/views/catalogo.php">Todos los productos</a><a href="<?= BASE_URL ?>/src/views/carrito.php">Mi carrito</a><a href="<?= BASE_URL ?>/src/views/user/pedidos.php">Mis pedidos</a><a href="<?= BASE_URL ?>/src/views/user/profile.php">Mi cuenta</a></nav>
+            <nav aria-label="Contacto y redes"><h2>Estamos para ayudarte</h2><a href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a><a href="https://www.instagram.com/mv.barvie/" target="_blank" rel="noopener noreferrer">Instagram ↗</a><a href="https://listado.mercadolibre.com.ar/_CustId_1356852917" target="_blank" rel="noopener noreferrer">Mercado Libre ↗</a></nav>
+        </div><div class="mvb-wide mvb-footer-bottom">© <?= date('Y') ?> MVB Multiventas · Accesorios, limpieza y herramientas para tu vehículo.</div>
     </footer>
 
     <!-- Modal de Autenticación -->

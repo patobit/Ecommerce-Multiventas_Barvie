@@ -1,71 +1,67 @@
 <?php
-// GUIA DE ESTUDIO MVB
-// PUNTO DE ENTRADA: el navegador pide esta pagina. PHP consulta productos en Strapi, selecciona 12 con foto y stock, y genera el HTML. El navegador recibe HTML; no ejecuta este PHP.
-
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/src/config/rutas.php';
-require_once __DIR__ . '/src/config/database.php';
 require_once __DIR__ . '/src/controllers/auth/productos_controller.php';
 require_once __DIR__ . '/src/views/productos_card.php';
-$seleccion = array_slice(array_values(array_filter(obtenerTodosLosProductos(), fn($p) => !empty($p['imagenes']) && (int)$p['stock'] > 0)), 0, 12);
+$allProducts = obtenerTodosLosProductos();
+$available = array_values(array_filter($allProducts, fn($p) => !empty($p['imagenes']) && (int)$p['stock'] > 0));
+$groups = [];
+foreach ($available as $p) $groups[$p['categoria_nombre']][] = $p;
+$selection = [];
+for ($round = 0; $round < 3 && count($selection) < 8; $round++) {
+    foreach ($groups as $items) {
+        if (isset($items[$round])) $selection[] = $items[$round];
+        if (count($selection) === 8) break;
+    }
+}
+$hero = [];
+foreach (['Limpieza · accesorios', 'Limpieza · productos', 'Herramientas y elevación'] as $cat) {
+    if (!empty($groups[$cat])) $hero[] = $groups[$cat][0];
+}
+if (count($hero) < 3) $hero = array_slice($available, 0, 3);
 $isHomePage = true;
-require_once __DIR__ . '/src/views/_layouts/header.php';
+require __DIR__ . '/src/views/_layouts/header.php';
 ?>
-<main class="mvb-storefront">
+<main id="contenido" class="mvb-storefront">
     <section class="mvb-showcase" aria-labelledby="home-title">
         <div class="mvb-wide mvb-showcase-grid">
             <div class="mvb-showcase-copy">
-                <p class="mvb-eyebrow">MULTIVENTAS BARVIE</p>
-                <h1 id="home-title">Más cuidado.<br>Más equipado.<br><span>Más tuyo.</span></h1>
-                <p>Todo para tu auto: limpieza, accesorios, iluminación y herramientas. Encontrá el próximo detalle con fotos, precios y stock disponibles.</p>
-                <a class="btn btn-premium-red" href="<?= BASE_URL ?>/src/views/catalogo.php">Ver todos los productos ↗</a>
-                <a class="mvb-showcase-contact" href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">Te ayudamos a elegir por WhatsApp</a>
+                <p class="mvb-eyebrow">MVB MULTIVENTAS · PARA TU VEHÍCULO</p>
+                <h1 id="home-title">El detalle<br>hace la <span>diferencia.</span></h1>
+                <p>Limpieza, accesorios y herramientas para cuidar tu auto y hacerlo más tuyo. Elegí con fotos claras, precios y stock en cada producto.</p>
+                <a class="btn btn-premium-red" href="<?= BASE_URL ?>/src/views/catalogo.php">Explorar el catálogo <span aria-hidden="true">↗</span></a>
+                <a class="mvb-showcase-contact" href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">¿Necesitás ayuda? Hablemos por WhatsApp ↗</a>
             </div>
-            <div class="mvb-hero-products" aria-label="Productos de Multiventas Barvie">
-                <a class="mvb-hero-product mvb-hero-product-main" href="<?= BASE_URL ?>/src/views/catalogo.php?buscar=ARMOR"><img src="<?= BASE_URL ?>/assets/img/limpieza-productos/arm17744/arm17744_01.png" alt="Shampoo Armor All Ultra Shine Wash and Wax" fetchpriority="high"><span>Limpieza y cuidado <strong>Que se note el detalle ↗</strong></span></a>
-                <a class="mvb-hero-product" href="<?= BASE_URL ?>/src/views/catalogo.php?buscar=DESTORNILLADOR"><img src="<?= BASE_URL ?>/assets/img/herramientas-y-elevacion/ll-013/ll-013_01.png" alt="Juego de destornilladores"><span>Herramientas <strong>Equipate para más ↗</strong></span></a>
-                <a class="mvb-hero-product" href="<?= BASE_URL ?>/src/views/catalogo.php?buscar=REVIGAL"><img src="<?= BASE_URL ?>/assets/img/limpieza-productos/re551/re551_01.png" alt="Limpiador de motores Revigal"><span>Cuidado del motor <strong>Ponelo a punto ↗</strong></span></a>
+            <div class="mvb-hero-products" aria-label="Una selección de nuestros productos">
+                <?php foreach ($hero as $i => $p): ?>
+                <a class="mvb-hero-product <?= $i === 0 ? 'mvb-hero-product-main' : '' ?>" href="<?= BASE_URL ?>/src/views/detalles_producto.php?id=<?= (int)$p['id_producto'] ?>">
+                    <img src="<?= htmlspecialchars(imagenCatalogo($p['imagenes'][0], $i === 0 ? 800 : 480)) ?>" alt="<?= htmlspecialchars($p['nombre']) ?>" width="640" height="640" <?= $i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?> decoding="async">
+                    <span><?= htmlspecialchars($p['categoria_nombre']) ?><strong><?= htmlspecialchars($p['nombre']) ?> ↗</strong></span>
+                </a>
+                <?php endforeach; ?>
+                <?php if (!$hero): ?><div class="mvb-loading-notice"><strong>Estamos preparando el catálogo.</strong><p>El servicio está tardando en responder. Volvé a intentar en unos instantes.</p><a href="<?= BASE_URL ?>/index.php">Volver a intentar ↻</a></div><?php endif; ?>
             </div>
         </div>
     </section>
-    <div class="mvb-service-strip mvb-wide"><span>ACCESORIOS PARA TU VEHÍCULO</span><span>PRECIOS Y STOCK EN CADA FICHA</span><a href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">ASESORAMIENTO POR WHATSAPP ↗</a></div>
+    <div class="mvb-service-strip mvb-wide"><span>FOTOS PARA ELEGIR MEJOR</span><span>PRECIOS Y STOCK DISPONIBLES</span><a href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">ASESORAMIENTO POR WHATSAPP ↗</a></div>
 
-    <section class="mvb-wide mvb-home-section" id="productos" aria-labelledby="selection-title">
-        <div class="mvb-section-heading"><div><p class="mvb-eyebrow">ENCONTRÁ TU PRÓXIMO DETALLE</p><h2 id="selection-title">Dale una vuelta a tu auto.</h2></div><div class="mvb-rail-controls"><button type="button" data-product-scroll="-1" aria-label="Ver productos anteriores">←</button><button type="button" data-product-scroll="1" aria-label="Ver más productos">→</button><a href="<?= BASE_URL ?>/src/views/catalogo.php">Ver todo ↗</a></div></div>
-        <?php if ($seleccion): ?>
-        <div class="mvb-product-rail" id="homeProductRail" tabindex="0" role="region" aria-label="Carrusel de productos, desplazable horizontalmente">
-            <?php foreach ($seleccion as $p): ?><?= renderProductCard($p) ?><?php endforeach; ?>
-        </div>
-        <?php else: ?><p>Explorá el catálogo para consultar nuestra selección.</p><?php endif; ?>
-    </section>
-
+    <?php if ($groups): ?>
     <section class="mvb-wide mvb-home-section" aria-labelledby="category-title">
-        <div class="mvb-section-heading"><h2 id="category-title">Explorá</h2></div>
-        <nav class="mvb-page-shortcuts" aria-label="Accesos principales">
-            <a href="<?= BASE_URL ?>/src/views/catalogo.php"><strong>Catálogo</strong></a>
-            <a href="<?= BASE_URL ?>/src/views/carrito.php"><strong>Carrito</strong></a>
-            <a href="<?= BASE_URL ?>/src/views/<?= !empty($_SESSION['usuario']) ? 'user/profile.php' : 'auth/login.php' ?>"><strong>Cuenta</strong></a>
-            <a href="#como-empezar"><strong>Contacto</strong></a>
+        <div class="mvb-section-heading"><div><p class="mvb-eyebrow">ENCONTRÁ LO QUE NECESITÁS</p><h2 id="category-title">Cada detalle, en su lugar.</h2></div><a class="mvb-text-link" href="<?= BASE_URL ?>/src/views/catalogo.php">Todas las categorías ↗</a></div>
+        <nav class="mvb-category-tiles" aria-label="Comprar por categoría">
+            <?php foreach (array_slice($groups, 0, 6, true) as $name => $items): $p = $items[0]; ?>
+            <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int)$p['id_categoria'] ?>"><img src="<?= htmlspecialchars(imagenCatalogo($p['imagenes'][0], 360)) ?>" alt="" width="180" height="180" loading="lazy"><span><?= htmlspecialchars($name) ?></span><span aria-hidden="true">↗</span></a>
+            <?php endforeach; ?>
         </nav>
     </section>
+    <?php endif; ?>
 
-    <section class="mvb-wide mvb-home-section" aria-labelledby="brands-title">
-        <div class="mvb-section-heading"><h2 id="brands-title">Marcas</h2></div>
-        <div class="mvb-brands-strip">
-            <?php foreach (['revigal' => 'Revigal', 'iael' => 'IAEL', 'goodyear' => 'Goodyear', 'barbie' => 'Barbie', 'armorall' => 'Armor All', 'california-scents' => 'California Scents'] as $archivo => $marca): ?>
-            <a href="<?= BASE_URL ?>/src/views/catalogo.php?buscar=<?= rawurlencode($marca) ?>" aria-label="Ver productos <?= htmlspecialchars($marca) ?>"><img src="<?= BASE_URL ?>/assets/img/marca-<?= $archivo ?>.png" alt="<?= htmlspecialchars($marca) ?>" loading="lazy"></a>
-            <?php endforeach; ?>
-        </div>
+    <section class="mvb-wide mvb-home-section" id="productos" aria-labelledby="selection-title">
+        <div class="mvb-section-heading"><div><p class="mvb-eyebrow">UNA SELECCIÓN PARA VOS</p><h2 id="selection-title">Equipá tu próximo cuidado.</h2></div><a class="mvb-text-link" href="<?= BASE_URL ?>/src/views/catalogo.php">Ver todos los productos ↗</a></div>
+        <?php if ($selection): ?><div class="mvb-home-products"><?php foreach ($selection as $p) echo renderProductCard($p); ?></div>
+        <?php else: ?><div class="mvb-loading-notice"><p>No pudimos cargar los productos en este momento.</p><a href="<?= BASE_URL ?>/index.php">Volver a intentar ↻</a></div><?php endif; ?>
     </section>
+
+    <section class="mvb-wide mvb-home-section" aria-labelledby="advice-title"><div class="mvb-advice-banner"><div><p class="mvb-eyebrow">ELEGÍ CON ASESORAMIENTO</p><h2 id="advice-title">Tu auto. Tu estilo.<br>Nosotros te damos una mano.</h2><p>Si tenés dudas sobre un producto, sus medidas o su compatibilidad, consultanos antes de comprar.</p></div><a class="btn btn-premium-red" href="https://wa.me/5491162982496" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp ↗</a></div></section>
 </main>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const rail = document.getElementById('homeProductRail');
-    document.querySelectorAll('[data-product-scroll]').forEach(button => {
-        button.addEventListener('click', () => {
-            if (rail) rail.scrollBy({left: Number(button.dataset.productScroll) * rail.clientWidth * .85, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
-        });
-    });
-});
-</script>
-<?php require_once __DIR__ . '/src/views/_layouts/footer.php'; ?>
+<?php require __DIR__ . '/src/views/_layouts/footer.php'; ?>

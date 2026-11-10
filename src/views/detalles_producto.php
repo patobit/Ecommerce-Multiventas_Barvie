@@ -12,7 +12,7 @@ $isCatalogPage = true;
 
 require_once __DIR__ . '/_layouts/header.php';
 ?>
-    <main class="container my-5 mvb-product-detail">
+    <main id="contenido" class="container my-5 mvb-product-detail">
 
         <?php if (!$producto): ?>
 
@@ -63,7 +63,7 @@ require_once __DIR__ . '/_layouts/header.php';
                             <?php if (!empty($imagenes)): ?>
                                 <?php foreach ($imagenes as $i => $url): ?>
                                     <div class="mvb-gallery-slide" <?= $i === 0 ? '' : 'hidden' ?>>
-                                        <img src="<?= htmlspecialchars($url) ?>"
+                                        <img src="<?= htmlspecialchars(imagenCatalogo($url, 1200)) ?>" width="1200" height="1200" decoding="async" <?= $i === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?>
                                              class="d-block w-100 product-detail-photo"
                                              alt="<?= htmlspecialchars($producto['nombre']) ?>">
                                     </div>
@@ -89,7 +89,7 @@ require_once __DIR__ . '/_layouts/header.php';
                     <?php if (count($imagenes) > 1): ?>
                     <div class="mvb-gallery-thumbs" aria-label="Elegir foto del producto">
                         <?php foreach ($imagenes as $i => $url): ?>
-                        <button type="button" data-gallery-index="<?= $i ?>" aria-label="Ver foto <?= $i + 1 ?>" aria-pressed="<?= $i === 0 ? 'true' : 'false' ?>"><img src="<?= htmlspecialchars($url) ?>" alt="" loading="lazy"></button>
+                        <button type="button" data-gallery-index="<?= $i ?>" aria-label="Ver foto <?= $i + 1 ?>" aria-pressed="<?= $i === 0 ? 'true' : 'false' ?>"><img src="<?= htmlspecialchars(imagenCatalogo($url, 160)) ?>" alt="" width="64" height="64" loading="lazy"></button>
                         <?php endforeach; ?>
                     </div><p class="text-secondary small mt-2" id="galleryPosition">Foto 1 de <?= count($imagenes) ?></p>
                     <?php endif; ?>
@@ -117,7 +117,7 @@ require_once __DIR__ . '/_layouts/header.php';
                     <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
                         <div class="input-group" style="max-width: 140px;">
                             <button class="btn btn-premium-outline" type="button" id="qtyMinus">−</button>
-                            <input type="number" id="qtyInput" aria-label="Cantidad de unidades" class="form-control form-control-premium text-center" value="1" min="1" max="9999" <?= (int) $producto['stock'] <= 0 ? 'disabled' : '' ?>>
+                            <input type="number" id="qtyInput" aria-label="Cantidad de unidades" class="form-control form-control-premium text-center" value="1" min="1" max="<?= max(1, (int)$producto['stock']) ?>" <?= (int) $producto['stock'] <= 0 ? 'disabled' : '' ?>>
                             <button class="btn btn-premium-outline" type="button" id="qtyPlus">+</button>
                         </div>
                         <button type="button" class="btn btn-premium-red product-add-button flex-grow-1 py-3"
@@ -126,7 +126,7 @@ require_once __DIR__ . '/_layouts/header.php';
                             <?= (int) $producto['stock'] <= 0 ? 'Sin stock' : 'Añadir al carrito' ?>
                         </button>
                     </div>
-                    <div class="product-detail-help"><strong>¿Tenés dudas sobre este producto?</strong><p>Consultanos antes de comprar. Respondemos consultas en todo momento.</p><a href="https://wa.me/5491162982496?text=<?= rawurlencode('Hola MVB, quiero consultar por ' . $producto['nombre']) ?>" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp ↗</a></div>
+                    <div class="product-detail-help"><strong>¿Tenés dudas sobre este producto?</strong><p>Consultanos antes de comprar. Te ayudamos a elegir y a revisar la compatibilidad.</p><a href="https://wa.me/5491162982496?text=<?= rawurlencode('Hola MVB, quiero consultar por ' . $producto['nombre']) ?>" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp ↗</a></div>
                 </div>
             </div>
 

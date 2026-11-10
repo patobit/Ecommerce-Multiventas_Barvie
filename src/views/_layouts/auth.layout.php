@@ -16,6 +16,7 @@ if (isset($_SESSION['usuario'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="<?= BASE_URL ?>/assets/css/style.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>/assets/css/storefront.css?v=<?= filemtime(__DIR__ . '/../../../assets/css/storefront.css') ?>" rel="stylesheet">
 </head>
 <body>
 
@@ -37,11 +38,11 @@ if (isset($_SESSION['usuario'])) {
                         <!-- Bloque Superior -->
                         <div>
                             <span class="badge badge-premium-red mb-3 px-3 py-2 fs-6">
-                                Club de Ofertas
+                                Tu cuenta MVB
                             </span>
                             
                             <h2 class="text-white fw-bold mb-3 fs-2">
-                                ¡Comprá rápido, seguro y a tu medida!
+                                Todo para tu auto, en un solo lugar.
                             </h2>
                             
                             <p class="text-light mb-4 fs-6 opacity-90">
@@ -63,8 +64,8 @@ if (isset($_SESSION['usuario'])) {
                             <div class="d-flex align-items-start gap-3">
                                 <span class="bg-danger text-white rounded-circle p-1 d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 28px; height: 28px;">★</span>
                                 <div>
-                                    <strong class="d-block text-white fs-6">Descuentos Exclusivos</strong>
-                                    <span class="text-light small">Accedé a precios preferenciales en artículos de detailing, herramientas y accesorios para tu vehículo.</span>
+                                    <strong class="d-block text-white fs-6">Tus pedidos, organizados</strong>
+                                    <span class="text-light small">Consultá tus pedidos y encontrá los productos que necesitás.</span>
                                 </div>
                             </div>
 
@@ -72,14 +73,14 @@ if (isset($_SESSION['usuario'])) {
                                 <span class="bg-danger text-white rounded-circle p-1 d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 28px; height: 28px;">🚗</span>
                                 <div>
                                     <strong class="d-block text-white fs-6">¿Por qué completar los datos opcionales?</strong>
-                                    <span class="text-light small">Al indicarnos la marca, modelo y año de tu auto, nuestro sistema filtra automáticamente los productos 100% compatibles con tu modelo.</span>
+                                    <span class="text-light small">Contanos qué vehículo tenés para ayudarnos a responder tus consultas de compatibilidad.</span>
                                 </div>
                             </div>
 
                             <div class="d-flex align-items-start gap-3">
                                 <span class="bg-danger text-white rounded-circle p-1 d-inline-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 28px; height: 28px;">⚡</span>
                                 <div>
-                                    <strong class="d-block text-white fs-6">Atención Prioritaria</strong>
+                                    <strong class="d-block text-white fs-6">Asesoramiento por WhatsApp</strong>
                                     <span class="text-light small">Recibí soporte técnico directo vía WhatsApp para resolver dudas sobre repuestos o instalación.</span>
                                 </div>
                             </div>
@@ -100,6 +101,6 @@ if (isset($_SESSION['usuario'])) {
                 <div class="auth-form-panel">
                     <div class="text-center text-md-start mb-4">
                         <a href="<?= BASE_URL ?>/index.php" class="text-decoration-none fw-bold text-uppercase tracking-wider fs-5">
-                            <span class="text-white">Multiventas</span><span class="text-danger"> Barvie</span>
+                            <img class="mvb-auth-logo" src="<?= BASE_URL ?>/assets/img/mvb-logo-aprobado.png" alt="MVB Multiventas" width="180" height="90">
                         </a>
                     </div>

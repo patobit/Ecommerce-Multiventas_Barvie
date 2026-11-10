@@ -72,6 +72,18 @@ function mapearImagenes(mixed $imagenData): array
     return $urls;
 }
 
+// Optimize only delivery copies; original media and gallery order stay intact.
+function imagenCatalogo(string $url, int $width = 640): string
+{
+    if (!preg_match('~^https://res\.cloudinary\.com/[^/]+/image/upload/~', $url)) return $url;
+    return preg_replace('~/image/upload/~', '/image/upload/f_auto,q_auto,c_limit,w_' . max(160, min(1600, $width)) . '/', $url, 1);
+}
+
+function catalogoNoDisponible(): bool
+{
+    return !empty($GLOBALS['mvb_catalog_unavailable']);
+}
+
 // ESTUDIO mapearCategoria: Traduce una categoria de Strapi al formato que usan el catalogo y su arbol.
 function mapearCategoria(array $item): array
 {
@@ -101,6 +113,7 @@ function obtenerTodosLosProductos(): array
             'sort' => 'Nombre:asc',
             'pagination' => ['start' => $inicio, 'limit' => 100],
         ]);
+        if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
         $items = $resultado['data']['data'] ?? [];
         foreach ($items as $item) {
             $productos[] = mapearProducto($item);
@@ -280,6 +293,7 @@ function obtenerArbolCategorias(): array
     $inicio = 0;
     do {
         $resultado = strapiRequest('GET', 'categorias', ['populate' => ['categoria'], 'sort' => 'Nombre:asc', 'pagination' => ['start' => $inicio, 'limit' => 100]]);
+        if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
         $items = $resultado['data']['data'] ?? [];
         foreach ($items as $item) $categorias[] = mapearCategoria($item);
         $inicio += count($items);
