@@ -46,7 +46,7 @@ if (!empty($_SESSION['usuario']['id']) && !empty($_SESSION['usuario']['jwt'])) {
             <div class="container">
                 <!-- Marca actualizada a MVB -->
                 <a class="navbar-brand fw-bold text-uppercase tracking-wider" href="<?= BASE_URL ?>/index.php">
-                    <img class="mvb-nav-logo" src="<?= BASE_URL ?>/assets/img/logo.jpg" alt="MVB · Multiventas Barvie" width="76" height="76"><span class="mvb-nav-name">MVB<small>MULTIVENTAS BARVIE</small></span>
+                    <img class="mvb-nav-logo" src="<?= BASE_URL ?>/assets/img/mvb-logo-aprobado.png" alt="MVB Multiventas" width="190" height="95">
                 </a>
                 <div class="flex-grow-1 mx-lg-4 my-2 my-lg-0 order-3 order-lg-0 position-relative" id="searchWrapper">
                     <label class="mvb-global-search-label" for="searchInput">Buscar en toda la tienda</label>

@@ -1015,7 +1015,7 @@ body {
 .mvb-page-shortcuts a:hover { background: #3a2027; border-color: #ff777a; }
 @media(max-width: 575px) { .mvb-page-shortcuts { grid-template-columns: 1fr; } }
 .navbar-premium .navbar-brand { display: flex; align-items: center; gap: 12px; border-bottom: 0; font-style: normal; }
-.mvb-nav-logo { width: 76px; height: 76px; object-fit: cover; border-radius: 12px; border: 1px solid #5d3136; }
+.mvb-nav-logo { width: 190px; height: 95px; object-fit: contain; }
 .mvb-nav-name { font-size: 26px; font-weight: 900; font-style: italic; }
 .mvb-nav-name small, .mvb-home .navbar-brand .mvb-nav-name small { display: block; font-size: 9px; letter-spacing: .08em; font-style: normal; }
 .mvb-home .navbar-brand, .mvb-catalog-page .navbar-brand { border-bottom: 0; }
@@ -1032,7 +1032,7 @@ body {
 .mvb-footer-links .mvb-contact-whatsapp { background: #164c37; border-color: #398969; }
 .mvb-footer-links .mvb-contact-instagram { background: linear-gradient(110deg,#462956,#7a293f); border-color: #aa526d; }
 .mvb-footer-links .mvb-footer-action:hover { border-color: #ff777a; color: #fff; }
-@media(max-width: 767px) { .mvb-nav-logo { width: 56px; height: 56px; } .mvb-social-image-link strong { font-size: 17px; } }
+@media(max-width: 767px) { .mvb-nav-logo { width: 150px; height: 75px; } .mvb-social-image-link strong { font-size: 17px; } }
 .mvb-wide { width: min(1500px, 94%); margin-inline: auto; }
 .mvb-footer { padding: 24px 0 18px; }
 .mvb-footer-links { gap: 6px; }
