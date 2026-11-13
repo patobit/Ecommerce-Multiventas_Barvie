@@ -514,3 +514,18 @@ document.addEventListener('DOMContentLoaded', () => {
     rail.addEventListener('scroll', refresh, {passive:true});
     window.addEventListener('resize', refresh); refresh();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const filters = document.getElementById('catalogFilters');
+    if (!filters) return;
+    const levels = Array.from(filters.querySelectorAll('[data-filter-level]'));
+    const showLevel = (id, focus = true) => {
+        levels.forEach(level => { level.hidden = level.dataset.filterLevel !== String(id); });
+        const active = levels.find(level => !level.hidden);
+        if (focus && active) active.querySelector('h2').focus({preventScroll:true});
+    };
+    filters.querySelectorAll('[data-filter-open]').forEach(button => button.addEventListener('click', () => showLevel(button.dataset.filterOpen)));
+    filters.addEventListener('toggle', () => { if (!filters.open) showLevel(0, false); });
+    document.addEventListener('click', event => { if (!filters.contains(event.target)) filters.open = false; });
+    filters.addEventListener('keydown', event => { if (event.key === 'Escape') { filters.open = false; filters.querySelector('summary').focus(); } });
+});

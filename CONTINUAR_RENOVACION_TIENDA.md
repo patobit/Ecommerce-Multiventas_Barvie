@@ -11,3 +11,6 @@ No importar exportaciones Strapi antiguas para actualizarfrontend: esas exportac
 
 Luego continuar19productos sin fotos. LM050:6fotos generadas revisadas, NOsubidas ni publicado. Usuario confirmo que no tiene referencias exactas paraVA021N,CP004,SG998,COT007,FP011,RE330,RE440,LL013;no inventar variantes.
 Los servidores remotos siguen funcionando con PCapagada. No compartir .env/tokens/sesiones ni datosclientes enGitHub. La carpeta privada .local-media-migration contiene manifiestos y acceso temporal original (revocar al cerrar carga; no exportado). Mantener originales de generacion.
+
+
+13/11 ACTUALIZACION PEDIDA: quitar entero bloque Cuidá cada detalle (ya ausente del frontendnuevo); filtros ahora en boton Filtros cerrado alentrar, sin sidebar ni mosaico de categorias abierto. Alabrir muestra solo padres;clickInterior muestra hijas;Volver,Escape ycierreexterior funcionan;seleccionarhoja aplica y cierra en siguiente pagina. Todoelcatalogo muestra99productos deentrada. Probado PC/390px:un nivelvisible, sin desborde;Interior>Cubrevolantes15productos. Paquete V2 reemplaza anterior para despliegue, aun faltaInfinityFree.

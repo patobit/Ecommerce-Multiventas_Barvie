@@ -27,3 +27,7 @@ Los datos de categorias en Strapi SI se actualizaron; el codigo/frontend NO se p
 ## Pendientes fuera de este arreglo
 19borradores siguen pendientes de fotos. Retorno de MercadoPago404 y ciclo completo de pago/pedido/stock requieren revision y prueba separadas (informe9/11). No se certifica checkout ni compatibilidad fisica de cada producto por esta auditoria.
 Las exportaciones Strapi entregadas aPato antes de este arreglo tienen el arbol anterior: no importarlas sobre la produccion actual, porque desharian estos cambios. Snapshot de categorias actual y scripts de registro se conservaron en la carpeta de continuidad privada.
+
+
+## Ajuste posterior: filtros compactos (13/11)
+Reemplaza la presentacion de tarjetas de categorias descrita arriba:sin banner Cuidá cada detalle ni sidebar. Catalogo entra con productos ybotonFiltros cerrado. Alabrir solo5padres;avanzarInterior muestra solo7hijas;Volverregresa;seleccionarCubrevolantes aplica15productos ymenu cerrado. Probadoancho390sin desborde. Cierre conEscape/clickfuera yreset a nivelsuperior implementados. SintaxisPHP/JS correctas. No cambios en datos. Pendiente subirfrontendInfinityFree.
