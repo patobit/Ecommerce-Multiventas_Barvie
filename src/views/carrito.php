@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/rutas.php';
 require_once __DIR__ . '/../controllers/auth/carrito.php';
 
-// Antes había un id_usuario=2 "temporal". Ahora se exige login real.
+// Se exige login real.
 if (empty($_SESSION['usuario']['id']) || empty($_SESSION['usuario']['jwt'])) {
     header('Location: ' . BASE_URL . '/src/views/auth/login.php');
     exit;
@@ -231,18 +231,17 @@ foreach ($productos as $producto) {
                 </div>
 
 
-                <!-- FINALIZAR COMPRA -->
+                <!-- FINALIZAR COMPRA CON MERCADO PAGO -->
                 <?php if (!empty($productos)): ?>
-                <form method="post" action="<?= BASE_URL ?>/src/views/compra_finalizada.php">
-                    <button type="submit" class="btn btn-premium-red w-100 fw-semibold">
+                    <button type="button" id="btn-finalizar-pago" class="btn btn-premium-red w-100 fw-semibold">
                          Finalizar compra
                     </button>
-                </form>
-                    <?php else: ?>
-                        <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
+                    <input type="hidden" id="csrf-token" value="<?= htmlspecialchars($_SESSION['checkout_csrf'] ?? '') ?>">
+                <?php else: ?>
+                    <button type="button" class="btn btn-premium-red w-100 fw-semibold" disabled>
                          Finalizar compra
-                        </button>
-                    <?php endif; ?>
+                    </button>
+                <?php endif; ?>
 
 
                 <!-- SEGUIR COMPRANDO -->
@@ -295,9 +294,33 @@ document.getElementById('cartItems').addEventListener('click', async (e) => {
     }
 });
 
+// Evento para procesar el pago asíncrono con Mercado Pago
+document.getElementById('btn-finalizar-pago')?.addEventListener('click', async () => {
+    const csrfToken = document.getElementById('csrf-token')?.value || '';
+
+    try {
+        const respuesta = await fetch('/src/controllers/auth/checkout_controller.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ csrf: csrfToken })
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.success && resultado.init_point) {
+            // Redirige al checkout oficial de Mercado Pago
+            window.location.href = resultado.init_point;
+        } else {
+            alert(resultado.message || 'No se pudo iniciar el pago con Mercado Pago.');
+        }
+    } catch (error) {
+        console.error('Error de red:', error);
+        alert('Ocurrió un error al conectar con el servidor de pagos.');
+    }
+});
 </script>
-
-
 
 <?php
 require_once __DIR__ . '/_layouts/footer.php';
