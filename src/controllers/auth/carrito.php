@@ -300,17 +300,23 @@ function iniciarPagoMercadoPago(string $jwt, int $idUsuario): array
         'items' => $itemsMP
     ], $jwt);
 
-    // 4. Procesar la respuesta
-    if (!$respuestaMP['ok'] || !isset($respuestaMP['data']['init_point'])) {
+    // 4. Procesar la respuesta (contempla si Strapi devuelve init_point en la raíz o dentro de data)
+    $initPoint = $respuestaMP['data']['init_point']
+        ?? $respuestaMP['data']['data']['init_point']
+        ?? $respuestaMP['data']['sandbox_init_point']
+        ?? null;
+
+    if (!$respuestaMP['ok'] || !$initPoint) {
+        $detalle = $respuestaMP['error'] ?? json_encode($respuestaMP['data'], JSON_UNESCAPED_UNICODE);
         return [
-            'success' => false, 
-            'message' => 'Error al conectar con Mercado Pago.'
+            'success' => false,
+            'message' => 'Strapi HTTP ' . ($respuestaMP['status'] ?? '?') . ': ' . $detalle
         ];
     }
 
-    // 5. Devolver la URL de pago para que el frontend (JS o PHP) redirija al usuario
+    // 5. Devolver la URL de pago para que el frontend redirija al usuario
     return [
         'success' => true,
-        'init_point' => $respuestaMP['data']['init_point']
+        'init_point' => $initPoint
     ];
 }
