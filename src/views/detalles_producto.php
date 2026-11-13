@@ -8,6 +8,8 @@ require_once __DIR__ . '/../controllers/auth/productos_controller.php';
 
 $idProducto = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $producto = $idProducto > 0 ? obtenerProductoPorId($idProducto) : null;
+$rutaProducto = $producto ? rutaCategoria(obtenerArbolCategorias(), (int)$producto['id_categoria']) : [];
+if (!$producto) http_response_code(catalogoNoDisponible() ? 503 : 404);
 $isCatalogPage = true;
 
 require_once __DIR__ . '/_layouts/header.php';
@@ -20,7 +22,7 @@ require_once __DIR__ . '/_layouts/header.php';
                  PRODUCTO NO ENCONTRADO
                  ================================================================ -->
             <div class="p-5 text-center bg-dark border border-secondary border-opacity-25 rounded-3">
-                <p class="text-secondary mb-3">No encontramos el producto que buscás.</p>
+                <p class="text-secondary mb-3"><?= catalogoNoDisponible() ? 'El catálogo está tardando en responder. Volvé a intentar en unos instantes.' : 'No encontramos el producto que buscás.' ?></p>
                 <a href="<?= BASE_URL ?>/src/views/catalogo.php" class="btn btn-premium-red">Volver al catálogo</a>
             </div>
 
@@ -52,7 +54,7 @@ require_once __DIR__ . '/_layouts/header.php';
                 if ($esLogoMarca) $imagenes = [$logoMarca];
             ?>
 
-            <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int) $producto['id_categoria'] ?>" class="text-secondary text-decoration-none small d-inline-block mb-4">← Volver a <?= htmlspecialchars($producto['categoria_nombre']) ?></a>
+            <nav class="catalog-breadcrumb" aria-label="Ubicación del producto"><a href="<?= BASE_URL ?>/src/views/catalogo.php">Todo el catálogo</a><?php foreach ($rutaProducto as $c): ?><span> / </span><a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int)$c['id_categoria'] ?>"><?= htmlspecialchars($c['nombre']) ?></a><?php endforeach; ?></nav>
 
             <div class="row g-5">
 
@@ -121,7 +123,7 @@ require_once __DIR__ . '/_layouts/header.php';
                             <button class="btn btn-premium-outline" type="button" id="qtyPlus">+</button>
                         </div>
                         <button type="button" class="btn btn-premium-red product-add-button flex-grow-1 py-3"
-                                onclick="addToCart(<?= (int) $producto['id_producto'] ?>, document.getElementById('qtyInput').value, <?= htmlspecialchars(json_encode($producto['nombre'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)"
+                                onclick="addToCart(<?= (int) $producto['id_producto'] ?>, Math.min(<?= max(1, (int)$producto['stock']) ?>, Math.max(1, Math.trunc(Number(document.getElementById('qtyInput').value) || 1))), <?= htmlspecialchars(json_encode($producto['nombre'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)"
                                 <?= (int) $producto['stock'] <= 0 ? 'disabled' : '' ?>>
                             <?= (int) $producto['stock'] <= 0 ? 'Sin stock' : 'Añadir al carrito' ?>
                         </button>
@@ -157,7 +159,9 @@ require_once __DIR__ . '/_layouts/header.php';
                 const normalizeQuantity = () => {
                     qtyInput.value = Math.max(1, Math.min(parseInt(qtyInput.max, 10), parseInt(qtyInput.value, 10) || 1));
                 };
+                qtyInput.addEventListener('input', () => { if (qtyInput.value !== '') normalizeQuantity(); });
                 qtyInput.addEventListener('change', normalizeQuantity);
+                qtyInput.addEventListener('blur', normalizeQuantity);
                 qtyMinus.disabled = qtyPlus.disabled = qtyInput.disabled;
                 qtyMinus.addEventListener('click', () => {
                     qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1', 10) - 1);

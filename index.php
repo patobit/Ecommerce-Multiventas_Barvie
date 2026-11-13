@@ -8,17 +8,24 @@ $available = array_values(array_filter($allProducts, fn($p) => !empty($p['imagen
 $groups = [];
 foreach ($available as $p) $groups[$p['categoria_nombre']][] = $p;
 $selection = [];
-for ($round = 0; $round < 3 && count($selection) < 8; $round++) {
+for ($round = 0; $round < 3 && count($selection) < 12; $round++) {
     foreach ($groups as $items) {
         if (isset($items[$round])) $selection[] = $items[$round];
-        if (count($selection) === 8) break;
+        if (count($selection) === 12) break;
     }
 }
 $hero = [];
-foreach (['Limpieza · accesorios', 'Limpieza · productos', 'Herramientas y elevación'] as $cat) {
-    if (!empty($groups[$cat])) $hero[] = $groups[$cat][0];
+foreach (['Manopla de limpieza de microfibra', 'Atornillador inalámbrico Goodyear', 'Lavamotores'] as $term) {
+    foreach ($available as $p) if (mb_stripos($p['nombre'], $term) !== false) { $hero[] = $p; break; }
 }
 if (count($hero) < 3) $hero = array_slice($available, 0, 3);
+$categoriasHome = obtenerArbolCategorias();
+$categoriasPrincipales = [];
+foreach ($categoriasHome as $cat) {
+    if ($cat['id_categoria_padre']) continue;
+    $ids = idsDescendientes($categoriasHome, (int)$cat['id_categoria']);
+    foreach ($available as $p) if (in_array((int)$p['id_categoria'], $ids, true)) { $cat['foto'] = $p['imagenes'][0]; $categoriasPrincipales[] = $cat; break; }
+}
 $isHomePage = true;
 require __DIR__ . '/src/views/_layouts/header.php';
 ?>
@@ -49,16 +56,16 @@ require __DIR__ . '/src/views/_layouts/header.php';
     <section class="mvb-wide mvb-home-section" aria-labelledby="category-title">
         <div class="mvb-section-heading"><div><p class="mvb-eyebrow">ENCONTRÁ LO QUE NECESITÁS</p><h2 id="category-title">Cada detalle, en su lugar.</h2></div><a class="mvb-text-link" href="<?= BASE_URL ?>/src/views/catalogo.php">Todas las categorías ↗</a></div>
         <nav class="mvb-category-tiles" aria-label="Comprar por categoría">
-            <?php foreach (array_slice($groups, 0, 6, true) as $name => $items): $p = $items[0]; ?>
-            <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int)$p['id_categoria'] ?>"><img src="<?= htmlspecialchars(imagenCatalogo($p['imagenes'][0], 360)) ?>" alt="" width="180" height="180" loading="lazy"><span><?= htmlspecialchars($name) ?></span><span aria-hidden="true">↗</span></a>
+            <?php foreach ($categoriasPrincipales as $cat): ?>
+            <a href="<?= BASE_URL ?>/src/views/catalogo.php?categoria=<?= (int)$cat['id_categoria'] ?>"><img src="<?= htmlspecialchars(imagenCatalogo($cat['foto'],360)) ?>" alt="" width="180" height="180" loading="lazy"><span><?= htmlspecialchars($cat['nombre']) ?></span><span aria-hidden="true">↗</span></a>
             <?php endforeach; ?>
         </nav>
     </section>
     <?php endif; ?>
 
     <section class="mvb-wide mvb-home-section" id="productos" aria-labelledby="selection-title">
-        <div class="mvb-section-heading"><div><p class="mvb-eyebrow">UNA SELECCIÓN PARA VOS</p><h2 id="selection-title">Equipá tu próximo cuidado.</h2></div><a class="mvb-text-link" href="<?= BASE_URL ?>/src/views/catalogo.php">Ver todos los productos ↗</a></div>
-        <?php if ($selection): ?><div class="mvb-home-products"><?php foreach ($selection as $p) echo renderProductCard($p); ?></div>
+        <div class="mvb-section-heading"><div><p class="mvb-eyebrow">UNA SELECCIÓN PARA VOS</p><h2 id="selection-title">Equipá tu próximo cuidado.</h2></div><div class="mvb-rail-controls"><button type="button" data-product-scroll="-1" aria-label="Ver productos anteriores">←</button><button type="button" data-product-scroll="1" aria-label="Ver más productos">→</button><a class="mvb-text-link" href="<?= BASE_URL ?>/src/views/catalogo.php?ver=todos">Ver todos ↗</a></div></div>
+        <?php if ($selection): ?><div class="mvb-product-rail" id="homeProductRail" tabindex="0" role="region" aria-label="Productos destacados, carrusel desplazable"><?php foreach ($selection as $p) echo renderProductCard($p); ?></div>
         <?php else: ?><div class="mvb-loading-notice"><p>No pudimos cargar los productos en este momento.</p><a href="<?= BASE_URL ?>/index.php">Volver a intentar ↻</a></div><?php endif; ?>
     </section>
 

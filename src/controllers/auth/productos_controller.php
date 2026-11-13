@@ -133,6 +133,7 @@ function obtenerProductosNuevos(int $limite = 4): array
         'pagination' => ['limit' => $limite],
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     return array_map('mapearProducto', $items);
 }
@@ -152,6 +153,7 @@ function obtenerProductoMasVendido(): array
         'pagination' => ['limit' => 1000],
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     if (empty($items)) {
         return [];
@@ -211,6 +213,7 @@ function obtenerCategorias(?int $idPadre = null): array
         'sort'    => 'Nombre:asc',
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     return array_map('mapearCategoria', $items);
 }
@@ -224,6 +227,7 @@ function obtenerCategoriaPorId(int $id): ?array
         'pagination' => ['limit' => 1],
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     return empty($items) ? null : mapearCategoria($items[0]);
 }
@@ -249,6 +253,7 @@ function obtenerProductosPorCategoria(int $idCategoria): array
         'pagination' => ['start' => 0, 'limit' => 100],
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     return array_map('mapearProducto', $items);
 }
@@ -256,14 +261,20 @@ function obtenerProductosPorCategoria(int $idCategoria): array
 // ESTUDIO obtenerProductoPorId: Busca por id numerico para abrir una ficha; el resultado incluye document_id para escrituras REST.
 function obtenerProductoPorId(int $id): ?array
 {
-    $resultado = strapiRequest('GET', 'productos', [
-        'filters'    => ['id' => ['$eq' => $id]],
-        'populate'   => ['categoria', 'Imagen'],
-        'pagination' => ['limit' => 1],
-    ]);
-
+    $query = ['filters'=>['id'=>['$eq'=>$id]],'populate'=>['categoria','Imagen'],'pagination'=>['limit'=>1]];
+    $resultado = strapiRequest('GET','productos',$query);
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
-    return empty($items) ? null : mapearProducto($items[0]);
+    if (!$items && $resultado['ok']) {
+        $aliases = json_decode(file_get_contents(__DIR__ . '/../../config/productos-legacy-ids.json'),true) ?: [];
+        if (isset($aliases[(string)$id])) {
+            $query['filters'] = ['documentId'=>['$eq'=>$aliases[(string)$id]]];
+            $resultado = strapiRequest('GET','productos',$query);
+            if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
+            $items = $resultado['data']['data'] ?? [];
+        }
+    }
+    return $items ? mapearProducto($items[0]) : null;
 }
 
 // ESTUDIO buscarProductos: Consulta coincidencias del termino en productos; no confundir con el filtro combinado de catalogo.php.
@@ -282,6 +293,7 @@ function buscarProductos(string $termino): array
         'pagination' => ['start' => 0, 'limit' => 100],
     ]);
 
+    if (!$resultado['ok']) $GLOBALS['mvb_catalog_unavailable'] = true;
     $items = $resultado['data']['data'] ?? [];
     return array_map('mapearProducto', $items);
 }
@@ -300,4 +312,34 @@ function obtenerArbolCategorias(): array
         $total = (int)($resultado['data']['meta']['pagination']['total'] ?? $inicio);
     } while ($items && $inicio < $total);
     return $categorias;
+}
+
+// Category navigation uses the published hierarchy, never label prefixes.
+function idsDescendientes(array $categorias, int $id): array
+{
+    $ids = []; $pending = [$id];
+    while ($pending) {
+        $next = array_pop($pending);
+        if (in_array($next, $ids, true)) continue;
+        $ids[] = $next;
+        foreach ($categorias as $c) if ((int)($c['id_categoria_padre'] ?? 0) === $next) $pending[] = (int)$c['id_categoria'];
+    }
+    return $ids;
+}
+function rutaCategoria(array $categorias, ?int $id): array
+{
+    $index = array_column($categorias, null, 'id_categoria'); $path = []; $seen = [];
+    while ($id && isset($index[$id]) && !isset($seen[$id])) {
+        $seen[$id] = true; array_unshift($path, $index[$id]); $id = (int)($index[$id]['id_categoria_padre'] ?? 0);
+    }
+    return $path;
+}
+
+function idCategoriaVigente(array $categorias, ?int $id): ?int
+{
+    if (!$id) return $id;
+    foreach ($categorias as $c) if ((int)$c['id_categoria'] === $id) return $id;
+    $aliases = json_decode(file_get_contents(__DIR__ . '/../../config/categorias-legacy-ids.json'), true) ?: [];
+    foreach ($categorias as $c) if ($c['document_id'] === ($aliases[(string)$id] ?? null)) return (int)$c['id_categoria'];
+    return $id;
 }

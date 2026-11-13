@@ -499,3 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => { input.value = button.textContent; form.requestSubmit(); });
     });
 });
+
+// Featured rail: controls are present only when published products loaded.
+document.addEventListener('DOMContentLoaded', () => {
+    const rail = document.getElementById('homeProductRail');
+    const prev = document.querySelector('[data-product-scroll="-1"]');
+    const next = document.querySelector('[data-product-scroll="1"]');
+    if (!rail || !prev || !next) return;
+    const refresh = () => {
+        prev.disabled = rail.scrollLeft < 2;
+        next.disabled = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+    };
+    [prev, next].forEach(button => button.addEventListener('click', () => rail.scrollBy({left:Number(button.dataset.productScroll) * rail.clientWidth * .85,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'})));
+    rail.addEventListener('scroll', refresh, {passive:true});
+    window.addEventListener('resize', refresh); refresh();
+});
