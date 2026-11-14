@@ -14,7 +14,11 @@ if (empty($_SESSION['usuario']['id']) || empty($_SESSION['usuario']['jwt'])) {
 if (isset($_GET['status']) && $_GET['status'] === 'approved') {
     try {
         // El pago fue exitoso, ahora SÍ vaciamos el carrito y registramos la compra en Strapi
-        $res = finalizarCompra($_SESSION['usuario']['jwt'], (int) $_SESSION['usuario']['id']);
+$res = finalizarCompra(
+    $_SESSION['usuario']['jwt'],
+    (int) $_SESSION['usuario']['id'],
+    ['payment_id' => $_GET['payment_id'] ?? $_GET['collection_id'] ?? '']
+);
     } catch (Throwable $e) {
         error_log($e->getMessage());
         $res = ['success' => false, 'message' => 'No se pudo registrar la compra en el sistema.'];

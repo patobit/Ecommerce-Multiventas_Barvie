@@ -7,7 +7,7 @@ module.exports = {
   async checkout(ctx) {
     if (!ctx.state.user) return ctx.unauthorized();
     try {
-      ctx.body = { data: await strapi.service('api::compra.pedidos').checkout(ctx.state.user, ctx.request.body || {}) };
+      ctx.body = { data: await strapi.service('api::c ompra.pedidos').checkout(ctx.state.user, ctx.request.body || {}) };
     } catch (error) {
       strapi.log.error('Checkout rechazado: ' + error.message);
       const expected = /^(Elegí|Completá|El efectivo|El carrito|Este carrito|Tu carrito|Un producto|Cantidad inválida|Precio inválido|Stock insuficiente)/.test(error.message);

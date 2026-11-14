@@ -219,54 +219,44 @@ function obtenerDetallePropio(string $jwt, int $idUsuario, int $idDetalleCarrito
  * Convierte el carrito activo del usuario en una compra: crea la Compra,
  * copia cada línea a detalle-compras, y cierra el carrito.
  */
-function finalizarCompra(string $jwt, int $idUsuario): array
+function finalizarCompra(string $jwt, int $idUsuario, array $extra = []): array
 {
     $resultado = obtenerProductosDelCarrito($jwt, $idUsuario);
     $productos = $resultado['productos'] ?? [];
 
-    if (empty($productos)) {
+    if (empty($productos) || empty($resultado['id_carrito'])) {
         return ['success' => false, 'message' => 'Tu carrito está vacío.'];
     }
 
-    $idCarrito = $resultado['id_carrito'];
-    $total     = $resultado['total'];
+    $usuario  = $_SESSION['usuario'] ?? [];
+    $nombre   = trim(($usuario['nombre'] ?? $usuario['Nombre'] ?? '') . ' ' . ($usuario['apellido'] ?? $usuario['Apellido'] ?? ''));
+    $telefono = trim((string) ($usuario['telefono'] ?? $usuario['Telefono'] ?? ''));
 
-    // 1. Crear la compra
-    $compraResultado = strapiRequest('POST', 'compras', [], [
-        'data' => [
-            'Fecha'                   => date('c'),
-            'Total'                   => $total,
-            'users_permissions_user'  => $idUsuario,
-        ],
-    ], $jwt);
+    $payload = [
+        'carrito'  => $resultado['id_carrito'],
+        'entrega'  => 'Retiro',
+        'pago'     => 'Mercado Pago',
+        'nombre'   => $nombre !== '' ? $nombre : ($usuario['email'] ?? 'Cliente MVB'),
+        'telefono' => $telefono !== '' ? $telefono : 'No especificado',
+        'notas'    => !empty($extra['payment_id']) ? 'Pago Mercado Pago #' . $extra['payment_id'] : '',
+    ];
 
-    if (!$compraResultado['ok']) {
-        return ['success' => false, 'message' => 'Error al crear la compra: ' . ($compraResultado['error'] ?? '')];
-    }
-    $idCompra = $compraResultado['data']['data']['documentId'];
+    $respuesta = strapiRequest('POST', 'mis-pedidos/checkout', [], $payload, $jwt);
 
-    // 2. Copiar cada línea del carrito a detalle-compras
-    foreach ($productos as $producto) {
-        $linea = strapiRequest('POST', 'detalle-compras', [], [
-            'data' => [
-                'Cantidad'        => $producto['cantidad'],
-                'Precio_unitario' => $producto['precio'],
-                'compra'          => $idCompra,
-                'producto'        => $producto['producto_document_id'],
-            ],
-        ], $jwt);
-        if (!$linea['ok']) {
-            return ['success' => false, 'message' => 'No se pudo completar la compra. Contactá a la tienda antes de reintentar.'];
-        }
+    if (!$respuesta['ok']) {
+        $detalle = $respuesta['error'] ?? json_encode($respuesta['data'], JSON_UNESCAPED_UNICODE);
+        return [
+            'success' => false,
+            'message' => 'No se pudo registrar el pedido: ' . $detalle,
+        ];
     }
 
-    // Cerrar el carrito conservando sus líneas como historial.
-    $cierre = strapiRequest('PUT', 'carritos/' . $idCarrito, [], [
-        'data' => ['Estado' => 'Convertido', 'compra' => $idCompra],
-    ], $jwt);
-
-    if (!$cierre['ok']) return ['success' => false, 'message' => 'No se pudo cerrar la compra. Contactá a la tienda.'];
-    return ['success' => true, 'message' => '¡Compra realizada con éxito!', 'id_compra' => $idCompra];
+    $pedido = $respuesta['data']['data'] ?? [];
+    return [
+        'success'   => true,
+        'message'   => '¡Compra realizada con éxito!',
+        'id_compra' => $pedido['documentId'] ?? null,
+    ];
 }
 
 /**

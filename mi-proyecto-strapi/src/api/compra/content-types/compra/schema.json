@@ -54,7 +54,8 @@
       "enum": [
         "A coordinar",
         "Transferencia",
-        "Efectivo al retirar"
+        "Efectivo al retirar",
+        "Mercado Pago"
       ]
     },
     "Estado_pago": {

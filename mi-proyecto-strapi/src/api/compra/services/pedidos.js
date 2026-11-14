@@ -33,7 +33,9 @@ module.exports = ({ strapi }) => ({
 
   async checkout(user, body) {
     if (!['Retiro','Envio'].includes(body.entrega)) throw new Error('Elegí retiro o envío.');
-    if (!['A coordinar','Transferencia','Efectivo al retirar'].includes(body.pago)) throw new Error('Elegí un método de pago.');
+    if (!['A coordinar', 'Transferencia', 'Efectivo al retirar', 'Mercado Pago'].includes(body.pago)) {
+  throw new Error('Elegí un método de pago.');
+}
     if (body.entrega === 'Envio' && body.pago === 'Efectivo al retirar') throw new Error('El efectivo al retirar requiere retiro.');
     const customer = {
       nombre: clean(body.nombre), telefono: clean(body.telefono, 40),
