@@ -78,9 +78,9 @@ module.exports = ({ strapi }) => ({
         if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 9999) throw new Error('Cantidad inválida.');
         const lockedProduct = await trx(productMeta.tableName).where('id', product.id).forUpdate().first();
         const priceColumn = productMeta.attributes.Precio.columnName;
-        const offerColumn = productMeta.attributes.Precio_oferta.columnName;
+        const offerAttr = productMeta.attributes.Precio_oferta;
         const price = money(lockedProduct[priceColumn]);
-        const offer = money(lockedProduct[offerColumn]);
+        const offer = offerAttr ? money(lockedProduct[offerAttr.columnName]) : 0;
         const unit = offer > 0 && offer < price ? offer : price;
         if (!Number.isSafeInteger(unit) || unit <= 0) throw new Error('Precio inválido.');
         if (deductStock) {
